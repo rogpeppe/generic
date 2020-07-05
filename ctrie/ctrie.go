@@ -56,7 +56,7 @@ type branch interface{}
 //line ctrie.go2:372
 var errCanceled = errors.New("canceled")
 
-//line ctrie.go2:805
+//line ctrie.go2:809
 func flagPos(hashcode uint32, lev uint, bmp uint32) (uint32, uint32) {
 	idx := (hashcode >> lev) & 0x1f
 	flag := uint32(1) << uint32(idx)
@@ -73,34 +73,34 @@ func bitCount(x uint32) uint32 {
 	return x >> 24
 }
 
-//line ctrie.go2:819
+//line ctrie.go2:823
 type Importable୦ int
-//line ctrie.go2:819
+//line ctrie.go2:823
 type _ bytes.Buffer
 
-//line ctrie.go2:819
+//line ctrie.go2:823
 var _ = errors.As
 
-//line ctrie.go2:819
+//line ctrie.go2:823
 type _ gatomic.Importable୦
-//line ctrie.go2:819
+//line ctrie.go2:823
 type _ hash.Hash
 
-//line ctrie.go2:819
+//line ctrie.go2:823
 var _ = fnv.New128
-//line ctrie.go2:819
+//line ctrie.go2:823
 var _ = strconv.AppendBool
 
-//line ctrie.go2:819
+//line ctrie.go2:823
 type _ sync.Cond
 
-//line ctrie.go2:819
+//line ctrie.go2:823
 var _ = atomic.AddInt32
-//line ctrie.go2:819
+//line ctrie.go2:823
 var _ = testing.AllocsPerRun
 
-//line ctrie.go2:819
+//line ctrie.go2:823
 const _ = time.ANSIC
 
-//line ctrie.go2:819
+//line ctrie.go2:823
 type _ unsafe.Pointer

@@ -234,7 +234,7 @@ func TestConcurrency2(t *testing.T) {
 
 				wg.Wait()
 //line ctrie_test.go2:202
- instantiate୦୦assertEqual୦uint(t, 10000, ctrie.Size())
+ instantiate୦୦assertEqual୦int(t, 10000, ctrie.Len())
 //line ctrie_test.go2:204
 }
 
@@ -438,13 +438,13 @@ func TestIteratorCoversTNodes(t *testing.T) {
 	}
 }
 
-func TestSize(t *testing.T) {
+func TestLen(t *testing.T) {
 	ctrie := instantiate୦୦New୦int(nil)
 	for i := 0; i < 10; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
 //line ctrie_test.go2:389
- instantiate୦୦assertEqual୦uint(t, 10, ctrie.Size())
+ instantiate୦୦assertEqual୦int(t, 10, ctrie.Len())
 //line ctrie_test.go2:391
 }
 
@@ -454,15 +454,15 @@ func TestClear(t *testing.T) {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
 //line ctrie_test.go2:397
- instantiate୦୦assertEqual୦uint(t, 10, ctrie.Size())
+ instantiate୦୦assertEqual୦int(t, 10, ctrie.Len())
 //line ctrie_test.go2:399
  snapshot := ctrie.Snapshot()
 
 				ctrie.Clear()
 //line ctrie_test.go2:401
- instantiate୦୦assertEqual୦uint(t, 0, ctrie.Size())
+ instantiate୦୦assertEqual୦int(t, 0, ctrie.Len())
 //line ctrie_test.go2:403
- instantiate୦୦assertEqual୦uint(t, 10, snapshot.Size())
+ instantiate୦୦assertEqual୦int(t, 10, snapshot.Len())
 //line ctrie_test.go2:405
 }
 
@@ -630,13 +630,6 @@ func instantiate୦୦assertEqual୦int(t *testing.T, x, y int,) {
 		t.Errorf("not equal, got %#v want %#v", y, x)
 	}
 }
-//line ctrie_test.go2:530
-func instantiate୦୦assertEqual୦uint(t *testing.T, x, y uint,) {
-	t.Helper()
-	if x != y {
-		t.Errorf("not equal, got %#v want %#v", y, x)
-	}
-}
 //line ctrie.go2:270
 func instantiate୦୦New୦interface୮4୮5(hashFactory HashFactory) *instantiate୦୦Ctrie୦interface୮4୮5 {
 	if hashFactory == nil {
@@ -749,10 +742,10 @@ func (c *instantiate୦୦Ctrie୦string,) Clear() {
 }
 
 //line ctrie.go2:359
-func (c *instantiate୦୦Ctrie୦string,) Size() uint {
+func (c *instantiate୦୦Ctrie୦string,) Len() int {
 
 //line ctrie.go2:365
- size := uint(0)
+ size := 0
 	for iter := c.Iterator(); iter.Next(); {
 		size++
 	}
@@ -768,7 +761,7 @@ func (c *instantiate୦୦Ctrie୦string,) Iterator() *instantiate୦୦Iter୦s
 	return iter
 }
 
-//line ctrie.go2:481
+//line ctrie.go2:485
 func (c *instantiate୦୦Ctrie୦string,) assertReadWrite() {
 	if c.readOnly {
 		panic("Cannot modify read-only snapshot")
@@ -784,7 +777,7 @@ func (c *instantiate୦୦Ctrie୦string,) insert(entry *instantiate୦୦Entry�
 
 func (c *instantiate୦୦Ctrie୦string,) lookup(entry *instantiate୦୦Entry୦string,) (string,
 
-//line ctrie.go2:494
+//line ctrie.go2:498
  bool) {
 	root := c.readRoot()
 	result, exists, ok := c.ilookup(root, entry, 0, nil, root.gen)
@@ -796,7 +789,7 @@ func (c *instantiate୦୦Ctrie୦string,) lookup(entry *instantiate୦୦Entry�
 
 func (c *instantiate୦୦Ctrie୦string,) remove(entry *instantiate୦୦Entry୦string,) (string,
 
-//line ctrie.go2:503
+//line ctrie.go2:507
  bool) {
 	root := c.readRoot()
 	result, exists, ok := c.iremove(root, entry, 0, nil, root.gen)
@@ -812,7 +805,7 @@ func (c *instantiate୦୦Ctrie୦string,) hash(k []byte) uint32 {
 	return hasher.Sum32()
 }
 
-//line ctrie.go2:520
+//line ctrie.go2:524
 func (c *instantiate୦୦Ctrie୦string,) iinsert(i *instantiate୦୦iNode୦string, entry *instantiate୦୦Entry୦string, lev uint, parent *instantiate୦୦iNode୦string, startGen *generation) bool {
 
 	main := instantiate୦୦gcasRead୦string(i, c)
@@ -822,7 +815,7 @@ func (c *instantiate୦୦Ctrie୦string,) iinsert(i *instantiate୦୦iNode୦s
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:531
+//line ctrie.go2:535
    rn := cn
 			if cn.gen != i.gen {
 				rn = cn.renewed(i.gen, c)
@@ -831,7 +824,7 @@ func (c *instantiate୦୦Ctrie୦string,) iinsert(i *instantiate୦୦iNode୦s
 			return instantiate୦୦gcas୦string(i, main, ncn, c)
 		}
 
-//line ctrie.go2:540
+//line ctrie.go2:544
   branch := cn.array[pos]
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦string:
@@ -847,7 +840,7 @@ func (c *instantiate୦୦Ctrie୦string,) iinsert(i *instantiate୦୦iNode୦s
 			sn := branch
 			if !bytes.Equal(sn.entry.Key, entry.Key) {
 
-//line ctrie.go2:561
+//line ctrie.go2:565
     rn := cn
 				if cn.gen != i.gen {
 					rn = cn.renewed(i.gen, c)
@@ -858,16 +851,16 @@ func (c *instantiate୦୦Ctrie୦string,) iinsert(i *instantiate୦୦iNode୦s
 				return instantiate୦୦gcas୦string(i, main, ncn, c)
 			}
 
-//line ctrie.go2:573
+//line ctrie.go2:577
    ncn := &instantiate୦୦mainNode୦string{cNode: cn.updated(pos, &instantiate୦୦sNode୦string{entry}, i.gen)}
 			return instantiate୦୦gcas୦string(i, main, ncn, c)
 		default:
 			panic("Ctrie is in an invalid state")
 		}
 	case main.tNode != nil:
-//line ctrie.go2:578
+//line ctrie.go2:582
   instantiate୦୦clean୦string(parent, lev-w, c)
-//line ctrie.go2:580
+//line ctrie.go2:584
   return false
 	case main.lNode != nil:
 		nln := &instantiate୦୦mainNode୦string{lNode: main.lNode.inserted(entry)}
@@ -877,10 +870,10 @@ func (c *instantiate୦୦Ctrie୦string,) iinsert(i *instantiate୦୦iNode୦s
 	}
 }
 
-//line ctrie.go2:593
+//line ctrie.go2:597
 func (c *instantiate୦୦Ctrie୦string,) ilookup(i *instantiate୦୦iNode୦string, entry *instantiate୦୦Entry୦string, lev uint, parent *instantiate୦୦iNode୦string, startGen *generation) (string,
 
-//line ctrie.go2:593
+//line ctrie.go2:597
  bool, bool) {
 
 	main := instantiate୦୦gcasRead୦string(i, c)
@@ -890,7 +883,7 @@ func (c *instantiate୦୦Ctrie୦string,) ilookup(i *instantiate୦୦iNode୦s
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:603
+//line ctrie.go2:607
    return instantiate୦୦z୦string(), false, true
 		}
 
@@ -898,7 +891,7 @@ func (c *instantiate୦୦Ctrie୦string,) ilookup(i *instantiate୦୦iNode୦s
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦string:
 
-//line ctrie.go2:611
+//line ctrie.go2:615
    in := branch
 			if c.readOnly || startGen == in.gen {
 				return c.ilookup(in, entry, lev+w, i, startGen)
@@ -909,7 +902,7 @@ func (c *instantiate୦୦Ctrie୦string,) ilookup(i *instantiate୦୦iNode୦s
 			return instantiate୦୦z୦string(), false, false
 		case *instantiate୦୦sNode୦string:
 
-//line ctrie.go2:625
+//line ctrie.go2:629
    sn := branch
 			if bytes.Equal(sn.entry.Key, entry.Key) {
 				return sn.entry.Value, true, true
@@ -922,7 +915,7 @@ func (c *instantiate୦୦Ctrie୦string,) ilookup(i *instantiate୦୦iNode୦s
 		return instantiate୦୦cleanReadOnly୦string(main.tNode, lev, parent, c, entry)
 	case main.lNode != nil:
 
-//line ctrie.go2:638
+//line ctrie.go2:642
   val, ok := main.lNode.lookup(entry)
 		return val, ok, true
 	default:
@@ -930,10 +923,10 @@ func (c *instantiate୦୦Ctrie୦string,) ilookup(i *instantiate୦୦iNode୦s
 	}
 }
 
-//line ctrie.go2:649
+//line ctrie.go2:653
 func (c *instantiate୦୦Ctrie୦string,) iremove(i *instantiate୦୦iNode୦string, entry *instantiate୦୦Entry୦string, lev uint, parent *instantiate୦୦iNode୦string, startGen *generation) (string,
 
-//line ctrie.go2:649
+//line ctrie.go2:653
  bool, bool) {
 
 	main := instantiate୦୦gcasRead୦string(i, c)
@@ -943,7 +936,7 @@ func (c *instantiate୦୦Ctrie୦string,) iremove(i *instantiate୦୦iNode୦s
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:659
+//line ctrie.go2:663
    return instantiate୦୦z୦string(), false, true
 		}
 
@@ -951,7 +944,7 @@ func (c *instantiate୦୦Ctrie୦string,) iremove(i *instantiate୦୦iNode୦s
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦string:
 
-//line ctrie.go2:667
+//line ctrie.go2:671
    in := branch
 			if startGen == in.gen {
 				return c.iremove(in, entry, lev+w, i, startGen)
@@ -962,23 +955,23 @@ func (c *instantiate୦୦Ctrie୦string,) iremove(i *instantiate୦୦iNode୦s
 			return instantiate୦୦z୦string(), false, false
 		case *instantiate୦୦sNode୦string:
 
-//line ctrie.go2:678
+//line ctrie.go2:682
    sn := branch
 			if !bytes.Equal(sn.entry.Key, entry.Key) {
 
 				return instantiate୦୦z୦string(), false, true
 			}
 
-//line ctrie.go2:689
+//line ctrie.go2:693
    ncn := cn.removed(pos, flag, i.gen)
 			cntr := instantiate୦୦toContracted୦string(ncn, lev)
 			if instantiate୦୦gcas୦string(i, main, cntr, c) {
 				if parent != nil {
 					main = instantiate୦୦gcasRead୦string(i, c)
 					if main.tNode != nil {
-//line ctrie.go2:694
+//line ctrie.go2:698
       instantiate୦୦cleanParent୦string(parent, i, entry.hash, lev-w, c, startGen)
-//line ctrie.go2:696
+//line ctrie.go2:700
      }
 				}
 				return sn.entry.Value, true, true
@@ -988,9 +981,9 @@ func (c *instantiate୦୦Ctrie୦string,) iremove(i *instantiate୦୦iNode୦s
 			panic("Ctrie is in an invalid state")
 		}
 	case main.tNode != nil:
-//line ctrie.go2:704
+//line ctrie.go2:708
   instantiate୦୦clean୦string(parent, lev-w, c)
-//line ctrie.go2:706
+//line ctrie.go2:710
   return instantiate୦୦z୦string(), false, false
 	case main.lNode != nil:
 		nln := &instantiate୦୦mainNode୦string{lNode: main.lNode.removed(entry)}
@@ -1008,12 +1001,12 @@ func (c *instantiate୦୦Ctrie୦string,) iremove(i *instantiate୦୦iNode୦s
 	}
 }
 
-//line ctrie.go2:896
+//line ctrie.go2:900
 func (c *instantiate୦୦Ctrie୦string,) readRoot() *instantiate୦୦iNode୦string {
 	return c.rdcssReadRoot(false)
 }
 
-//line ctrie.go2:902
+//line ctrie.go2:906
 func (c *instantiate୦୦Ctrie୦string,) rdcssReadRoot(abort bool) *instantiate୦୦iNode୦string {
 	r := instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8string୮9(&c.root)
 	if r.rdcss != nil {
@@ -1022,7 +1015,7 @@ func (c *instantiate୦୦Ctrie୦string,) rdcssReadRoot(abort bool) *instantiat
 	return r
 }
 
-//line ctrie.go2:913
+//line ctrie.go2:917
 func (c *instantiate୦୦Ctrie୦string,) rdcssRoot(old *instantiate୦୦iNode୦string, expected *instantiate୦୦mainNode୦string, nv *instantiate୦୦iNode୦string,) bool {
 	desc := &instantiate୦୦iNode୦string{
 		rdcss: &instantiate୦୦rdcssDescriptor୦string{
@@ -1038,7 +1031,7 @@ func (c *instantiate୦୦Ctrie୦string,) rdcssRoot(old *instantiate୦୦iNode
 	return false
 }
 
-//line ctrie.go2:929
+//line ctrie.go2:933
 func (c *instantiate୦୦Ctrie୦string,) rdcssComplete(abort bool) *instantiate୦୦iNode୦string {
 	for {
 		r := instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8string୮9(&c.root)
@@ -1076,13 +1069,13 @@ func (c *instantiate୦୦Ctrie୦string,) rdcssComplete(abort bool) *instantiat
 	}
 }
 
-//line ctrie.go2:967
+//line ctrie.go2:971
 func (c *instantiate୦୦Ctrie୦string,) casRoot(ov, nv *instantiate୦୦iNode୦string,) bool {
 	c.assertReadWrite()
 	return instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮aiNode୮8string୮9(&c.root, ov, nv)
 }
 
-//line ctrie.go2:970
+//line ctrie.go2:974
 type instantiate୦୦iNode୦string struct {
 //line ctrie.go2:67
  main *instantiate୦୦mainNode୦string
@@ -1269,10 +1262,10 @@ func (c *instantiate୦୦Ctrie୦int,) Clear() {
 }
 
 //line ctrie.go2:359
-func (c *instantiate୦୦Ctrie୦int,) Size() uint {
+func (c *instantiate୦୦Ctrie୦int,) Len() int {
 
 //line ctrie.go2:365
- size := uint(0)
+ size := 0
 	for iter := c.Iterator(); iter.Next(); {
 		size++
 	}
@@ -1288,7 +1281,7 @@ func (c *instantiate୦୦Ctrie୦int,) Iterator() *instantiate୦୦Iter୦int 
 	return iter
 }
 
-//line ctrie.go2:481
+//line ctrie.go2:485
 func (c *instantiate୦୦Ctrie୦int,) assertReadWrite() {
 	if c.readOnly {
 		panic("Cannot modify read-only snapshot")
@@ -1304,7 +1297,7 @@ func (c *instantiate୦୦Ctrie୦int,) insert(entry *instantiate୦୦Entry୦i
 
 func (c *instantiate୦୦Ctrie୦int,) lookup(entry *instantiate୦୦Entry୦int,) (int,
 
-//line ctrie.go2:494
+//line ctrie.go2:498
  bool) {
 	root := c.readRoot()
 	result, exists, ok := c.ilookup(root, entry, 0, nil, root.gen)
@@ -1316,7 +1309,7 @@ func (c *instantiate୦୦Ctrie୦int,) lookup(entry *instantiate୦୦Entry୦i
 
 func (c *instantiate୦୦Ctrie୦int,) remove(entry *instantiate୦୦Entry୦int,) (int,
 
-//line ctrie.go2:503
+//line ctrie.go2:507
  bool) {
 	root := c.readRoot()
 	result, exists, ok := c.iremove(root, entry, 0, nil, root.gen)
@@ -1332,7 +1325,7 @@ func (c *instantiate୦୦Ctrie୦int,) hash(k []byte) uint32 {
 	return hasher.Sum32()
 }
 
-//line ctrie.go2:520
+//line ctrie.go2:524
 func (c *instantiate୦୦Ctrie୦int,) iinsert(i *instantiate୦୦iNode୦int, entry *instantiate୦୦Entry୦int, lev uint, parent *instantiate୦୦iNode୦int, startGen *generation) bool {
 
 	main := instantiate୦୦gcasRead୦int(i, c)
@@ -1342,7 +1335,7 @@ func (c *instantiate୦୦Ctrie୦int,) iinsert(i *instantiate୦୦iNode୦int,
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:531
+//line ctrie.go2:535
    rn := cn
 			if cn.gen != i.gen {
 				rn = cn.renewed(i.gen, c)
@@ -1351,7 +1344,7 @@ func (c *instantiate୦୦Ctrie୦int,) iinsert(i *instantiate୦୦iNode୦int,
 			return instantiate୦୦gcas୦int(i, main, ncn, c)
 		}
 
-//line ctrie.go2:540
+//line ctrie.go2:544
   branch := cn.array[pos]
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦int:
@@ -1367,7 +1360,7 @@ func (c *instantiate୦୦Ctrie୦int,) iinsert(i *instantiate୦୦iNode୦int,
 			sn := branch
 			if !bytes.Equal(sn.entry.Key, entry.Key) {
 
-//line ctrie.go2:561
+//line ctrie.go2:565
     rn := cn
 				if cn.gen != i.gen {
 					rn = cn.renewed(i.gen, c)
@@ -1378,16 +1371,16 @@ func (c *instantiate୦୦Ctrie୦int,) iinsert(i *instantiate୦୦iNode୦int,
 				return instantiate୦୦gcas୦int(i, main, ncn, c)
 			}
 
-//line ctrie.go2:573
+//line ctrie.go2:577
    ncn := &instantiate୦୦mainNode୦int{cNode: cn.updated(pos, &instantiate୦୦sNode୦int{entry}, i.gen)}
 			return instantiate୦୦gcas୦int(i, main, ncn, c)
 		default:
 			panic("Ctrie is in an invalid state")
 		}
 	case main.tNode != nil:
-//line ctrie.go2:578
+//line ctrie.go2:582
   instantiate୦୦clean୦int(parent, lev-w, c)
-//line ctrie.go2:580
+//line ctrie.go2:584
   return false
 	case main.lNode != nil:
 		nln := &instantiate୦୦mainNode୦int{lNode: main.lNode.inserted(entry)}
@@ -1397,10 +1390,10 @@ func (c *instantiate୦୦Ctrie୦int,) iinsert(i *instantiate୦୦iNode୦int,
 	}
 }
 
-//line ctrie.go2:593
+//line ctrie.go2:597
 func (c *instantiate୦୦Ctrie୦int,) ilookup(i *instantiate୦୦iNode୦int, entry *instantiate୦୦Entry୦int, lev uint, parent *instantiate୦୦iNode୦int, startGen *generation) (int,
 
-//line ctrie.go2:593
+//line ctrie.go2:597
  bool, bool) {
 
 	main := instantiate୦୦gcasRead୦int(i, c)
@@ -1410,7 +1403,7 @@ func (c *instantiate୦୦Ctrie୦int,) ilookup(i *instantiate୦୦iNode୦int,
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:603
+//line ctrie.go2:607
    return instantiate୦୦z୦int(), false, true
 		}
 
@@ -1418,7 +1411,7 @@ func (c *instantiate୦୦Ctrie୦int,) ilookup(i *instantiate୦୦iNode୦int,
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦int:
 
-//line ctrie.go2:611
+//line ctrie.go2:615
    in := branch
 			if c.readOnly || startGen == in.gen {
 				return c.ilookup(in, entry, lev+w, i, startGen)
@@ -1429,7 +1422,7 @@ func (c *instantiate୦୦Ctrie୦int,) ilookup(i *instantiate୦୦iNode୦int,
 			return instantiate୦୦z୦int(), false, false
 		case *instantiate୦୦sNode୦int:
 
-//line ctrie.go2:625
+//line ctrie.go2:629
    sn := branch
 			if bytes.Equal(sn.entry.Key, entry.Key) {
 				return sn.entry.Value, true, true
@@ -1442,7 +1435,7 @@ func (c *instantiate୦୦Ctrie୦int,) ilookup(i *instantiate୦୦iNode୦int,
 		return instantiate୦୦cleanReadOnly୦int(main.tNode, lev, parent, c, entry)
 	case main.lNode != nil:
 
-//line ctrie.go2:638
+//line ctrie.go2:642
   val, ok := main.lNode.lookup(entry)
 		return val, ok, true
 	default:
@@ -1450,10 +1443,10 @@ func (c *instantiate୦୦Ctrie୦int,) ilookup(i *instantiate୦୦iNode୦int,
 	}
 }
 
-//line ctrie.go2:649
+//line ctrie.go2:653
 func (c *instantiate୦୦Ctrie୦int,) iremove(i *instantiate୦୦iNode୦int, entry *instantiate୦୦Entry୦int, lev uint, parent *instantiate୦୦iNode୦int, startGen *generation) (int,
 
-//line ctrie.go2:649
+//line ctrie.go2:653
  bool, bool) {
 
 	main := instantiate୦୦gcasRead୦int(i, c)
@@ -1463,7 +1456,7 @@ func (c *instantiate୦୦Ctrie୦int,) iremove(i *instantiate୦୦iNode୦int,
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:659
+//line ctrie.go2:663
    return instantiate୦୦z୦int(), false, true
 		}
 
@@ -1471,7 +1464,7 @@ func (c *instantiate୦୦Ctrie୦int,) iremove(i *instantiate୦୦iNode୦int,
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦int:
 
-//line ctrie.go2:667
+//line ctrie.go2:671
    in := branch
 			if startGen == in.gen {
 				return c.iremove(in, entry, lev+w, i, startGen)
@@ -1482,23 +1475,23 @@ func (c *instantiate୦୦Ctrie୦int,) iremove(i *instantiate୦୦iNode୦int,
 			return instantiate୦୦z୦int(), false, false
 		case *instantiate୦୦sNode୦int:
 
-//line ctrie.go2:678
+//line ctrie.go2:682
    sn := branch
 			if !bytes.Equal(sn.entry.Key, entry.Key) {
 
 				return instantiate୦୦z୦int(), false, true
 			}
 
-//line ctrie.go2:689
+//line ctrie.go2:693
    ncn := cn.removed(pos, flag, i.gen)
 			cntr := instantiate୦୦toContracted୦int(ncn, lev)
 			if instantiate୦୦gcas୦int(i, main, cntr, c) {
 				if parent != nil {
 					main = instantiate୦୦gcasRead୦int(i, c)
 					if main.tNode != nil {
-//line ctrie.go2:694
+//line ctrie.go2:698
       instantiate୦୦cleanParent୦int(parent, i, entry.hash, lev-w, c, startGen)
-//line ctrie.go2:696
+//line ctrie.go2:700
      }
 				}
 				return sn.entry.Value, true, true
@@ -1508,9 +1501,9 @@ func (c *instantiate୦୦Ctrie୦int,) iremove(i *instantiate୦୦iNode୦int,
 			panic("Ctrie is in an invalid state")
 		}
 	case main.tNode != nil:
-//line ctrie.go2:704
+//line ctrie.go2:708
   instantiate୦୦clean୦int(parent, lev-w, c)
-//line ctrie.go2:706
+//line ctrie.go2:710
   return instantiate୦୦z୦int(), false, false
 	case main.lNode != nil:
 		nln := &instantiate୦୦mainNode୦int{lNode: main.lNode.removed(entry)}
@@ -1528,12 +1521,12 @@ func (c *instantiate୦୦Ctrie୦int,) iremove(i *instantiate୦୦iNode୦int,
 	}
 }
 
-//line ctrie.go2:896
+//line ctrie.go2:900
 func (c *instantiate୦୦Ctrie୦int,) readRoot() *instantiate୦୦iNode୦int {
 	return c.rdcssReadRoot(false)
 }
 
-//line ctrie.go2:902
+//line ctrie.go2:906
 func (c *instantiate୦୦Ctrie୦int,) rdcssReadRoot(abort bool) *instantiate୦୦iNode୦int {
 	r := instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8int୮9(&c.root)
 	if r.rdcss != nil {
@@ -1542,7 +1535,7 @@ func (c *instantiate୦୦Ctrie୦int,) rdcssReadRoot(abort bool) *instantiate�
 	return r
 }
 
-//line ctrie.go2:913
+//line ctrie.go2:917
 func (c *instantiate୦୦Ctrie୦int,) rdcssRoot(old *instantiate୦୦iNode୦int, expected *instantiate୦୦mainNode୦int, nv *instantiate୦୦iNode୦int,) bool {
 	desc := &instantiate୦୦iNode୦int{
 		rdcss: &instantiate୦୦rdcssDescriptor୦int{
@@ -1558,7 +1551,7 @@ func (c *instantiate୦୦Ctrie୦int,) rdcssRoot(old *instantiate୦୦iNode୦
 	return false
 }
 
-//line ctrie.go2:929
+//line ctrie.go2:933
 func (c *instantiate୦୦Ctrie୦int,) rdcssComplete(abort bool) *instantiate୦୦iNode୦int {
 	for {
 		r := instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8int୮9(&c.root)
@@ -1596,13 +1589,13 @@ func (c *instantiate୦୦Ctrie୦int,) rdcssComplete(abort bool) *instantiate�
 	}
 }
 
-//line ctrie.go2:967
+//line ctrie.go2:971
 func (c *instantiate୦୦Ctrie୦int,) casRoot(ov, nv *instantiate୦୦iNode୦int,) bool {
 	c.assertReadWrite()
 	return instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮aiNode୮8int୮9(&c.root, ov, nv)
 }
 
-//line ctrie.go2:970
+//line ctrie.go2:974
 type instantiate୦୦iNode୦int struct {
 //line ctrie.go2:67
  main *instantiate୦୦mainNode୦int
@@ -1789,10 +1782,10 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) Clear() {
 }
 
 //line ctrie.go2:359
-func (c *instantiate୦୦Ctrie୦interface୮4୮5,) Size() uint {
+func (c *instantiate୦୦Ctrie୦interface୮4୮5,) Len() int {
 
 //line ctrie.go2:365
- size := uint(0)
+ size := 0
 	for iter := c.Iterator(); iter.Next(); {
 		size++
 	}
@@ -1808,7 +1801,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) Iterator() *instantiate୦
 	return iter
 }
 
-//line ctrie.go2:481
+//line ctrie.go2:485
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) assertReadWrite() {
 	if c.readOnly {
 		panic("Cannot modify read-only snapshot")
@@ -1824,7 +1817,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) insert(entry *instantiate�
 
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) lookup(entry *instantiate୦୦Entry୦interface୮4୮5,) (interface{},
 
-//line ctrie.go2:494
+//line ctrie.go2:498
  bool) {
 	root := c.readRoot()
 	result, exists, ok := c.ilookup(root, entry, 0, nil, root.gen)
@@ -1836,7 +1829,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) lookup(entry *instantiate�
 
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) remove(entry *instantiate୦୦Entry୦interface୮4୮5,) (interface{},
 
-//line ctrie.go2:503
+//line ctrie.go2:507
  bool) {
 	root := c.readRoot()
 	result, exists, ok := c.iremove(root, entry, 0, nil, root.gen)
@@ -1852,7 +1845,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) hash(k []byte) uint32 {
 	return hasher.Sum32()
 }
 
-//line ctrie.go2:520
+//line ctrie.go2:524
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iinsert(i *instantiate୦୦iNode୦interface୮4୮5, entry *instantiate୦୦Entry୦interface୮4୮5, lev uint, parent *instantiate୦୦iNode୦interface୮4୮5, startGen *generation) bool {
 
 	main := instantiate୦୦gcasRead୦interface୮4୮5(i, c)
@@ -1862,7 +1855,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iinsert(i *instantiate୦�
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:531
+//line ctrie.go2:535
    rn := cn
 			if cn.gen != i.gen {
 				rn = cn.renewed(i.gen, c)
@@ -1871,7 +1864,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iinsert(i *instantiate୦�
 			return instantiate୦୦gcas୦interface୮4୮5(i, main, ncn, c)
 		}
 
-//line ctrie.go2:540
+//line ctrie.go2:544
   branch := cn.array[pos]
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦interface୮4୮5:
@@ -1887,7 +1880,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iinsert(i *instantiate୦�
 			sn := branch
 			if !bytes.Equal(sn.entry.Key, entry.Key) {
 
-//line ctrie.go2:561
+//line ctrie.go2:565
     rn := cn
 				if cn.gen != i.gen {
 					rn = cn.renewed(i.gen, c)
@@ -1898,16 +1891,16 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iinsert(i *instantiate୦�
 				return instantiate୦୦gcas୦interface୮4୮5(i, main, ncn, c)
 			}
 
-//line ctrie.go2:573
+//line ctrie.go2:577
    ncn := &instantiate୦୦mainNode୦interface୮4୮5{cNode: cn.updated(pos, &instantiate୦୦sNode୦interface୮4୮5{entry}, i.gen)}
 			return instantiate୦୦gcas୦interface୮4୮5(i, main, ncn, c)
 		default:
 			panic("Ctrie is in an invalid state")
 		}
 	case main.tNode != nil:
-//line ctrie.go2:578
+//line ctrie.go2:582
   instantiate୦୦clean୦interface୮4୮5(parent, lev-w, c)
-//line ctrie.go2:580
+//line ctrie.go2:584
   return false
 	case main.lNode != nil:
 		nln := &instantiate୦୦mainNode୦interface୮4୮5{lNode: main.lNode.inserted(entry)}
@@ -1917,10 +1910,10 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iinsert(i *instantiate୦�
 	}
 }
 
-//line ctrie.go2:593
+//line ctrie.go2:597
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) ilookup(i *instantiate୦୦iNode୦interface୮4୮5, entry *instantiate୦୦Entry୦interface୮4୮5, lev uint, parent *instantiate୦୦iNode୦interface୮4୮5, startGen *generation) (interface{},
 
-//line ctrie.go2:593
+//line ctrie.go2:597
  bool, bool) {
 
 	main := instantiate୦୦gcasRead୦interface୮4୮5(i, c)
@@ -1930,7 +1923,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) ilookup(i *instantiate୦�
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:603
+//line ctrie.go2:607
    return instantiate୦୦z୦interface୮4୮5(), false, true
 		}
 
@@ -1938,7 +1931,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) ilookup(i *instantiate୦�
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦interface୮4୮5:
 
-//line ctrie.go2:611
+//line ctrie.go2:615
    in := branch
 			if c.readOnly || startGen == in.gen {
 				return c.ilookup(in, entry, lev+w, i, startGen)
@@ -1949,7 +1942,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) ilookup(i *instantiate୦�
 			return instantiate୦୦z୦interface୮4୮5(), false, false
 		case *instantiate୦୦sNode୦interface୮4୮5:
 
-//line ctrie.go2:625
+//line ctrie.go2:629
    sn := branch
 			if bytes.Equal(sn.entry.Key, entry.Key) {
 				return sn.entry.Value, true, true
@@ -1962,7 +1955,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) ilookup(i *instantiate୦�
 		return instantiate୦୦cleanReadOnly୦interface୮4୮5(main.tNode, lev, parent, c, entry)
 	case main.lNode != nil:
 
-//line ctrie.go2:638
+//line ctrie.go2:642
   val, ok := main.lNode.lookup(entry)
 		return val, ok, true
 	default:
@@ -1970,10 +1963,10 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) ilookup(i *instantiate୦�
 	}
 }
 
-//line ctrie.go2:649
+//line ctrie.go2:653
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iremove(i *instantiate୦୦iNode୦interface୮4୮5, entry *instantiate୦୦Entry୦interface୮4୮5, lev uint, parent *instantiate୦୦iNode୦interface୮4୮5, startGen *generation) (interface{},
 
-//line ctrie.go2:649
+//line ctrie.go2:653
  bool, bool) {
 
 	main := instantiate୦୦gcasRead୦interface୮4୮5(i, c)
@@ -1983,7 +1976,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iremove(i *instantiate୦�
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:659
+//line ctrie.go2:663
    return instantiate୦୦z୦interface୮4୮5(), false, true
 		}
 
@@ -1991,7 +1984,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iremove(i *instantiate୦�
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦interface୮4୮5:
 
-//line ctrie.go2:667
+//line ctrie.go2:671
    in := branch
 			if startGen == in.gen {
 				return c.iremove(in, entry, lev+w, i, startGen)
@@ -2002,23 +1995,23 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iremove(i *instantiate୦�
 			return instantiate୦୦z୦interface୮4୮5(), false, false
 		case *instantiate୦୦sNode୦interface୮4୮5:
 
-//line ctrie.go2:678
+//line ctrie.go2:682
    sn := branch
 			if !bytes.Equal(sn.entry.Key, entry.Key) {
 
 				return instantiate୦୦z୦interface୮4୮5(), false, true
 			}
 
-//line ctrie.go2:689
+//line ctrie.go2:693
    ncn := cn.removed(pos, flag, i.gen)
 			cntr := instantiate୦୦toContracted୦interface୮4୮5(ncn, lev)
 			if instantiate୦୦gcas୦interface୮4୮5(i, main, cntr, c) {
 				if parent != nil {
 					main = instantiate୦୦gcasRead୦interface୮4୮5(i, c)
 					if main.tNode != nil {
-//line ctrie.go2:694
+//line ctrie.go2:698
       instantiate୦୦cleanParent୦interface୮4୮5(parent, i, entry.hash, lev-w, c, startGen)
-//line ctrie.go2:696
+//line ctrie.go2:700
      }
 				}
 				return sn.entry.Value, true, true
@@ -2028,9 +2021,9 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iremove(i *instantiate୦�
 			panic("Ctrie is in an invalid state")
 		}
 	case main.tNode != nil:
-//line ctrie.go2:704
+//line ctrie.go2:708
   instantiate୦୦clean୦interface୮4୮5(parent, lev-w, c)
-//line ctrie.go2:706
+//line ctrie.go2:710
   return instantiate୦୦z୦interface୮4୮5(), false, false
 	case main.lNode != nil:
 		nln := &instantiate୦୦mainNode୦interface୮4୮5{lNode: main.lNode.removed(entry)}
@@ -2048,12 +2041,12 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) iremove(i *instantiate୦�
 	}
 }
 
-//line ctrie.go2:896
+//line ctrie.go2:900
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) readRoot() *instantiate୦୦iNode୦interface୮4୮5 {
 	return c.rdcssReadRoot(false)
 }
 
-//line ctrie.go2:902
+//line ctrie.go2:906
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) rdcssReadRoot(abort bool) *instantiate୦୦iNode୦interface୮4୮5 {
 	r := instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8interface୮4୮5୮9(&c.root)
 	if r.rdcss != nil {
@@ -2062,7 +2055,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) rdcssReadRoot(abort bool) 
 	return r
 }
 
-//line ctrie.go2:913
+//line ctrie.go2:917
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) rdcssRoot(old *instantiate୦୦iNode୦interface୮4୮5, expected *instantiate୦୦mainNode୦interface୮4୮5, nv *instantiate୦୦iNode୦interface୮4୮5,) bool {
 	desc := &instantiate୦୦iNode୦interface୮4୮5{
 		rdcss: &instantiate୦୦rdcssDescriptor୦interface୮4୮5{
@@ -2078,7 +2071,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) rdcssRoot(old *instantiate
 	return false
 }
 
-//line ctrie.go2:929
+//line ctrie.go2:933
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) rdcssComplete(abort bool) *instantiate୦୦iNode୦interface୮4୮5 {
 	for {
 		r := instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8interface୮4୮5୮9(&c.root)
@@ -2116,13 +2109,13 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) rdcssComplete(abort bool) 
 	}
 }
 
-//line ctrie.go2:967
+//line ctrie.go2:971
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) casRoot(ov, nv *instantiate୦୦iNode୦interface୮4୮5,) bool {
 	c.assertReadWrite()
 	return instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮aiNode୮8interface୮4୮5୮9(&c.root, ov, nv)
 }
 
-//line ctrie.go2:970
+//line ctrie.go2:974
 type instantiate୦୦iNode୦interface୮4୮5 struct {
 //line ctrie.go2:67
  main *instantiate୦୦mainNode୦interface୮4୮5
@@ -2308,10 +2301,10 @@ func (c *instantiate୦୦Ctrie୦bool,) Clear() {
 }
 
 //line ctrie.go2:359
-func (c *instantiate୦୦Ctrie୦bool,) Size() uint {
+func (c *instantiate୦୦Ctrie୦bool,) Len() int {
 
 //line ctrie.go2:365
- size := uint(0)
+ size := 0
 	for iter := c.Iterator(); iter.Next(); {
 		size++
 	}
@@ -2327,7 +2320,7 @@ func (c *instantiate୦୦Ctrie୦bool,) Iterator() *instantiate୦୦Iter୦boo
 	return iter
 }
 
-//line ctrie.go2:481
+//line ctrie.go2:485
 func (c *instantiate୦୦Ctrie୦bool,) assertReadWrite() {
 	if c.readOnly {
 		panic("Cannot modify read-only snapshot")
@@ -2343,7 +2336,7 @@ func (c *instantiate୦୦Ctrie୦bool,) insert(entry *instantiate୦୦Entry୦
 
 func (c *instantiate୦୦Ctrie୦bool,) lookup(entry *instantiate୦୦Entry୦bool,) (bool,
 
-//line ctrie.go2:494
+//line ctrie.go2:498
  bool) {
 	root := c.readRoot()
 	result, exists, ok := c.ilookup(root, entry, 0, nil, root.gen)
@@ -2355,7 +2348,7 @@ func (c *instantiate୦୦Ctrie୦bool,) lookup(entry *instantiate୦୦Entry୦
 
 func (c *instantiate୦୦Ctrie୦bool,) remove(entry *instantiate୦୦Entry୦bool,) (bool,
 
-//line ctrie.go2:503
+//line ctrie.go2:507
  bool) {
 	root := c.readRoot()
 	result, exists, ok := c.iremove(root, entry, 0, nil, root.gen)
@@ -2371,7 +2364,7 @@ func (c *instantiate୦୦Ctrie୦bool,) hash(k []byte) uint32 {
 	return hasher.Sum32()
 }
 
-//line ctrie.go2:520
+//line ctrie.go2:524
 func (c *instantiate୦୦Ctrie୦bool,) iinsert(i *instantiate୦୦iNode୦bool, entry *instantiate୦୦Entry୦bool, lev uint, parent *instantiate୦୦iNode୦bool, startGen *generation) bool {
 
 	main := instantiate୦୦gcasRead୦bool(i, c)
@@ -2381,7 +2374,7 @@ func (c *instantiate୦୦Ctrie୦bool,) iinsert(i *instantiate୦୦iNode୦boo
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:531
+//line ctrie.go2:535
    rn := cn
 			if cn.gen != i.gen {
 				rn = cn.renewed(i.gen, c)
@@ -2390,7 +2383,7 @@ func (c *instantiate୦୦Ctrie୦bool,) iinsert(i *instantiate୦୦iNode୦boo
 			return instantiate୦୦gcas୦bool(i, main, ncn, c)
 		}
 
-//line ctrie.go2:540
+//line ctrie.go2:544
   branch := cn.array[pos]
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦bool:
@@ -2406,7 +2399,7 @@ func (c *instantiate୦୦Ctrie୦bool,) iinsert(i *instantiate୦୦iNode୦boo
 			sn := branch
 			if !bytes.Equal(sn.entry.Key, entry.Key) {
 
-//line ctrie.go2:561
+//line ctrie.go2:565
     rn := cn
 				if cn.gen != i.gen {
 					rn = cn.renewed(i.gen, c)
@@ -2417,16 +2410,16 @@ func (c *instantiate୦୦Ctrie୦bool,) iinsert(i *instantiate୦୦iNode୦boo
 				return instantiate୦୦gcas୦bool(i, main, ncn, c)
 			}
 
-//line ctrie.go2:573
+//line ctrie.go2:577
    ncn := &instantiate୦୦mainNode୦bool{cNode: cn.updated(pos, &instantiate୦୦sNode୦bool{entry}, i.gen)}
 			return instantiate୦୦gcas୦bool(i, main, ncn, c)
 		default:
 			panic("Ctrie is in an invalid state")
 		}
 	case main.tNode != nil:
-//line ctrie.go2:578
+//line ctrie.go2:582
   instantiate୦୦clean୦bool(parent, lev-w, c)
-//line ctrie.go2:580
+//line ctrie.go2:584
   return false
 	case main.lNode != nil:
 		nln := &instantiate୦୦mainNode୦bool{lNode: main.lNode.inserted(entry)}
@@ -2436,10 +2429,10 @@ func (c *instantiate୦୦Ctrie୦bool,) iinsert(i *instantiate୦୦iNode୦boo
 	}
 }
 
-//line ctrie.go2:593
+//line ctrie.go2:597
 func (c *instantiate୦୦Ctrie୦bool,) ilookup(i *instantiate୦୦iNode୦bool, entry *instantiate୦୦Entry୦bool, lev uint, parent *instantiate୦୦iNode୦bool, startGen *generation) (bool,
 
-//line ctrie.go2:593
+//line ctrie.go2:597
  bool, bool) {
 
 	main := instantiate୦୦gcasRead୦bool(i, c)
@@ -2449,7 +2442,7 @@ func (c *instantiate୦୦Ctrie୦bool,) ilookup(i *instantiate୦୦iNode୦boo
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:603
+//line ctrie.go2:607
    return instantiate୦୦z୦bool(), false, true
 		}
 
@@ -2457,7 +2450,7 @@ func (c *instantiate୦୦Ctrie୦bool,) ilookup(i *instantiate୦୦iNode୦boo
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦bool:
 
-//line ctrie.go2:611
+//line ctrie.go2:615
    in := branch
 			if c.readOnly || startGen == in.gen {
 				return c.ilookup(in, entry, lev+w, i, startGen)
@@ -2468,7 +2461,7 @@ func (c *instantiate୦୦Ctrie୦bool,) ilookup(i *instantiate୦୦iNode୦boo
 			return instantiate୦୦z୦bool(), false, false
 		case *instantiate୦୦sNode୦bool:
 
-//line ctrie.go2:625
+//line ctrie.go2:629
    sn := branch
 			if bytes.Equal(sn.entry.Key, entry.Key) {
 				return sn.entry.Value, true, true
@@ -2481,7 +2474,7 @@ func (c *instantiate୦୦Ctrie୦bool,) ilookup(i *instantiate୦୦iNode୦boo
 		return instantiate୦୦cleanReadOnly୦bool(main.tNode, lev, parent, c, entry)
 	case main.lNode != nil:
 
-//line ctrie.go2:638
+//line ctrie.go2:642
   val, ok := main.lNode.lookup(entry)
 		return val, ok, true
 	default:
@@ -2489,10 +2482,10 @@ func (c *instantiate୦୦Ctrie୦bool,) ilookup(i *instantiate୦୦iNode୦boo
 	}
 }
 
-//line ctrie.go2:649
+//line ctrie.go2:653
 func (c *instantiate୦୦Ctrie୦bool,) iremove(i *instantiate୦୦iNode୦bool, entry *instantiate୦୦Entry୦bool, lev uint, parent *instantiate୦୦iNode୦bool, startGen *generation) (bool,
 
-//line ctrie.go2:649
+//line ctrie.go2:653
  bool, bool) {
 
 	main := instantiate୦୦gcasRead୦bool(i, c)
@@ -2502,7 +2495,7 @@ func (c *instantiate୦୦Ctrie୦bool,) iremove(i *instantiate୦୦iNode୦boo
 		flag, pos := flagPos(entry.hash, lev, cn.bmp)
 		if cn.bmp&flag == 0 {
 
-//line ctrie.go2:659
+//line ctrie.go2:663
    return instantiate୦୦z୦bool(), false, true
 		}
 
@@ -2510,7 +2503,7 @@ func (c *instantiate୦୦Ctrie୦bool,) iremove(i *instantiate୦୦iNode୦boo
 		switch branch := branch.(type) {
 		case *instantiate୦୦iNode୦bool:
 
-//line ctrie.go2:667
+//line ctrie.go2:671
    in := branch
 			if startGen == in.gen {
 				return c.iremove(in, entry, lev+w, i, startGen)
@@ -2521,23 +2514,23 @@ func (c *instantiate୦୦Ctrie୦bool,) iremove(i *instantiate୦୦iNode୦boo
 			return instantiate୦୦z୦bool(), false, false
 		case *instantiate୦୦sNode୦bool:
 
-//line ctrie.go2:678
+//line ctrie.go2:682
    sn := branch
 			if !bytes.Equal(sn.entry.Key, entry.Key) {
 
 				return instantiate୦୦z୦bool(), false, true
 			}
 
-//line ctrie.go2:689
+//line ctrie.go2:693
    ncn := cn.removed(pos, flag, i.gen)
 			cntr := instantiate୦୦toContracted୦bool(ncn, lev)
 			if instantiate୦୦gcas୦bool(i, main, cntr, c) {
 				if parent != nil {
 					main = instantiate୦୦gcasRead୦bool(i, c)
 					if main.tNode != nil {
-//line ctrie.go2:694
+//line ctrie.go2:698
       instantiate୦୦cleanParent୦bool(parent, i, entry.hash, lev-w, c, startGen)
-//line ctrie.go2:696
+//line ctrie.go2:700
      }
 				}
 				return sn.entry.Value, true, true
@@ -2547,9 +2540,9 @@ func (c *instantiate୦୦Ctrie୦bool,) iremove(i *instantiate୦୦iNode୦boo
 			panic("Ctrie is in an invalid state")
 		}
 	case main.tNode != nil:
-//line ctrie.go2:704
+//line ctrie.go2:708
   instantiate୦୦clean୦bool(parent, lev-w, c)
-//line ctrie.go2:706
+//line ctrie.go2:710
   return instantiate୦୦z୦bool(), false, false
 	case main.lNode != nil:
 		nln := &instantiate୦୦mainNode୦bool{lNode: main.lNode.removed(entry)}
@@ -2567,12 +2560,12 @@ func (c *instantiate୦୦Ctrie୦bool,) iremove(i *instantiate୦୦iNode୦boo
 	}
 }
 
-//line ctrie.go2:896
+//line ctrie.go2:900
 func (c *instantiate୦୦Ctrie୦bool,) readRoot() *instantiate୦୦iNode୦bool {
 	return c.rdcssReadRoot(false)
 }
 
-//line ctrie.go2:902
+//line ctrie.go2:906
 func (c *instantiate୦୦Ctrie୦bool,) rdcssReadRoot(abort bool) *instantiate୦୦iNode୦bool {
 	r := instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8bool୮9(&c.root)
 	if r.rdcss != nil {
@@ -2581,7 +2574,7 @@ func (c *instantiate୦୦Ctrie୦bool,) rdcssReadRoot(abort bool) *instantiate�
 	return r
 }
 
-//line ctrie.go2:913
+//line ctrie.go2:917
 func (c *instantiate୦୦Ctrie୦bool,) rdcssRoot(old *instantiate୦୦iNode୦bool, expected *instantiate୦୦mainNode୦bool, nv *instantiate୦୦iNode୦bool,) bool {
 	desc := &instantiate୦୦iNode୦bool{
 		rdcss: &instantiate୦୦rdcssDescriptor୦bool{
@@ -2597,7 +2590,7 @@ func (c *instantiate୦୦Ctrie୦bool,) rdcssRoot(old *instantiate୦୦iNode�
 	return false
 }
 
-//line ctrie.go2:929
+//line ctrie.go2:933
 func (c *instantiate୦୦Ctrie୦bool,) rdcssComplete(abort bool) *instantiate୦୦iNode୦bool {
 	for {
 		r := instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8bool୮9(&c.root)
@@ -2635,13 +2628,13 @@ func (c *instantiate୦୦Ctrie୦bool,) rdcssComplete(abort bool) *instantiate�
 	}
 }
 
-//line ctrie.go2:967
+//line ctrie.go2:971
 func (c *instantiate୦୦Ctrie୦bool,) casRoot(ov, nv *instantiate୦୦iNode୦bool,) bool {
 	c.assertReadWrite()
 	return instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮aiNode୮8bool୮9(&c.root, ov, nv)
 }
 
-//line ctrie.go2:970
+//line ctrie.go2:974
 type instantiate୦୦iNode୦bool struct {
 //line ctrie.go2:67
  main *instantiate୦୦mainNode୦bool
@@ -2753,7 +2746,7 @@ type instantiate୦୦Entry୦string struct {
  hash uint32
 }
 
-//line ctrie.go2:836
+//line ctrie.go2:840
 func instantiate୦୦gcasRead୦string(in *instantiate୦୦iNode୦string, ctrie *instantiate୦୦Ctrie୦string,) *instantiate୦୦mainNode୦string {
 	m := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8string୮9(&in.main)
 	prev := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8string୮9(&m.prev)
@@ -2763,15 +2756,17 @@ func instantiate୦୦gcasRead୦string(in *instantiate୦୦iNode୦string, ctr
 	return instantiate୦୦gcasComplete୦string(in, m, ctrie)
 }
 
-//line ctrie.go2:843
+//line ctrie.go2:847
 type instantiate୦୦Iter୦string struct {
-//line ctrie.go2:384
- c     *instantiate୦୦Ctrie୦string
-			stack []instantiate୦୦iterFrame୦string
-			curr  *instantiate୦୦Entry୦string
+//line ctrie.go2:385
+ c *instantiate୦୦Ctrie୦string
+
+//line ctrie.go2:389
+ stack []instantiate୦୦iterFrame୦string
+	curr *instantiate୦୦Entry୦string
 }
 
-//line ctrie.go2:399
+//line ctrie.go2:403
 func (i *instantiate୦୦Iter୦string,) Next() bool {
 	i.curr = nil
 	for i.curr == nil && len(i.stack) > 0 {
@@ -2854,21 +2849,21 @@ func (i *instantiate୦୦Iter୦string,) push(f func(*instantiate୦୦Iter୦s
 	return elem
 }
 
-//line ctrie.go2:479
+//line ctrie.go2:483
 type instantiate୦୦sNode୦string struct {
 //line ctrie.go2:265
  entry *instantiate୦୦Entry୦string
 }
 
-//line ctrie.go2:826
-func instantiate୦୦gcas୦string(in *instantiate୦୦iNode୦string, old, n *instantiate୦୦mainNode୦string, ct *instantiate୦୦Ctrie୦string,) bool {
-//line ctrie.go2:826
- instantiate୦gatomic୦StorePointer୦ctrie୮amainNode୮8string୮9(&n.prev, old)
-//line ctrie.go2:828
- if instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8string୮9(&in.main, old, n) {
-//line ctrie.go2:828
-  instantiate୦୦gcasComplete୦string(in, n, ct)
 //line ctrie.go2:830
+func instantiate୦୦gcas୦string(in *instantiate୦୦iNode୦string, old, n *instantiate୦୦mainNode୦string, ct *instantiate୦୦Ctrie୦string,) bool {
+//line ctrie.go2:830
+ instantiate୦gatomic୦StorePointer୦ctrie୮amainNode୮8string୮9(&n.prev, old)
+//line ctrie.go2:832
+ if instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8string୮9(&in.main, old, n) {
+//line ctrie.go2:832
+  instantiate୦୦gcasComplete୦string(in, n, ct)
+//line ctrie.go2:834
   return instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8string୮9(&n.prev) == nil
 	}
 	return false
@@ -2900,7 +2895,7 @@ func instantiate୦୦newMainNode୦string(x *instantiate୦୦sNode୦string, x
 	return &instantiate୦୦mainNode୦string{lNode: l}
 }
 
-//line ctrie.go2:769
+//line ctrie.go2:773
 func instantiate୦୦clean୦string(i *instantiate୦୦iNode୦string, lev uint, ctrie *instantiate୦୦Ctrie୦string,) bool {
 	main := instantiate୦୦gcasRead୦string(i, ctrie)
 	if main.cNode != nil {
@@ -2909,19 +2904,19 @@ func instantiate୦୦clean୦string(i *instantiate୦୦iNode୦string, lev uin
 	return true
 }
 
-//line ctrie.go2:972
+//line ctrie.go2:976
 func instantiate୦୦z୦string() string {
 			var v string
 
-//line ctrie.go2:974
+//line ctrie.go2:978
  return v
 }
-//line ctrie.go2:777
+//line ctrie.go2:781
 func instantiate୦୦cleanReadOnly୦string(tn *instantiate୦୦tNode୦string, lev uint, p *instantiate୦୦iNode୦string, ctrie *instantiate୦୦Ctrie୦string, entry *instantiate୦୦Entry୦string,) (val string, exists bool, ok bool) {
 	if !ctrie.readOnly {
-//line ctrie.go2:778
+//line ctrie.go2:782
   instantiate୦୦clean୦string(p, lev-5, ctrie)
-//line ctrie.go2:780
+//line ctrie.go2:784
   return instantiate୦୦z୦string(), false, false
 	}
 	if tn.sNode.entry.hash == entry.hash && bytes.Equal(tn.sNode.entry.Key, entry.Key) {
@@ -2929,7 +2924,7 @@ func instantiate୦୦cleanReadOnly୦string(tn *instantiate୦୦tNode୦string
 	}
 	return instantiate୦୦z୦string(), false, true
 }
-//line ctrie.go2:727
+//line ctrie.go2:731
 func instantiate୦୦toContracted୦string(cn *instantiate୦୦cNode୦string, lev uint) *instantiate୦୦mainNode୦string {
 	if lev > 0 && len(cn.array) == 1 {
 		switch branch := cn.array[0].(type) {
@@ -2942,7 +2937,7 @@ func instantiate୦୦toContracted୦string(cn *instantiate୦୦cNode୦string,
 	return &instantiate୦୦mainNode୦string{cNode: cn}
 }
 
-//line ctrie.go2:788
+//line ctrie.go2:792
 func instantiate୦୦cleanParent୦string(p, i *instantiate୦୦iNode୦string, hc uint32, lev uint, ctrie *instantiate୦୦Ctrie୦string, startGen *generation) {
 	main := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8string୮9(&i.main)
 	pMain := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8string୮9(&p.main)
@@ -2953,15 +2948,15 @@ func instantiate୦୦cleanParent୦string(p, i *instantiate୦୦iNode୦string
 			if sub == i && main.tNode != nil {
 				ncn := pMain.cNode.updated(pos, instantiate୦୦resurrect୦string(i, main), i.gen)
 				if !instantiate୦୦gcas୦string(p, pMain, instantiate୦୦toContracted୦string(ncn, lev), ctrie) && ctrie.readRoot().gen == startGen {
-//line ctrie.go2:797
+//line ctrie.go2:801
      instantiate୦୦cleanParent୦string(p, i, hc, lev, ctrie, startGen)
-//line ctrie.go2:799
+//line ctrie.go2:803
     }
 			}
 		}
 	}
 }
-//line ctrie.go2:758
+//line ctrie.go2:762
 func instantiate୦୦entomb୦string(m *instantiate୦୦sNode୦string,) *instantiate୦୦mainNode୦string {
 	return &instantiate୦୦mainNode୦string{tNode: &instantiate୦୦tNode୦string{m}}
 }
@@ -2976,7 +2971,7 @@ func instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8string୮9(addr **i
 
 //line ctrie_test.go2:6
 type instantiate୦୦rdcssDescriptor୦string struct {
-//line ctrie.go2:887
+//line ctrie.go2:891
  old *instantiate୦୦iNode୦string
 	expected  *instantiate୦୦mainNode୦string
 	nv        *instantiate୦୦iNode୦string
@@ -3068,7 +3063,7 @@ type instantiate୦୦Entry୦int struct {
  hash uint32
 }
 
-//line ctrie.go2:836
+//line ctrie.go2:840
 func instantiate୦୦gcasRead୦int(in *instantiate୦୦iNode୦int, ctrie *instantiate୦୦Ctrie୦int,) *instantiate୦୦mainNode୦int {
 	m := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8int୮9(&in.main)
 	prev := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8int୮9(&m.prev)
@@ -3078,15 +3073,17 @@ func instantiate୦୦gcasRead୦int(in *instantiate୦୦iNode୦int, ctrie *in
 	return instantiate୦୦gcasComplete୦int(in, m, ctrie)
 }
 
-//line ctrie.go2:843
+//line ctrie.go2:847
 type instantiate୦୦Iter୦int struct {
-//line ctrie.go2:384
- c     *instantiate୦୦Ctrie୦int
-			stack []instantiate୦୦iterFrame୦int
-			curr  *instantiate୦୦Entry୦int
+//line ctrie.go2:385
+ c *instantiate୦୦Ctrie୦int
+
+//line ctrie.go2:389
+ stack []instantiate୦୦iterFrame୦int
+	curr *instantiate୦୦Entry୦int
 }
 
-//line ctrie.go2:399
+//line ctrie.go2:403
 func (i *instantiate୦୦Iter୦int,) Next() bool {
 	i.curr = nil
 	for i.curr == nil && len(i.stack) > 0 {
@@ -3169,21 +3166,21 @@ func (i *instantiate୦୦Iter୦int,) push(f func(*instantiate୦୦Iter୦int,
 	return elem
 }
 
-//line ctrie.go2:479
+//line ctrie.go2:483
 type instantiate୦୦sNode୦int struct {
 //line ctrie.go2:265
  entry *instantiate୦୦Entry୦int
 }
 
-//line ctrie.go2:826
-func instantiate୦୦gcas୦int(in *instantiate୦୦iNode୦int, old, n *instantiate୦୦mainNode୦int, ct *instantiate୦୦Ctrie୦int,) bool {
-//line ctrie.go2:826
- instantiate୦gatomic୦StorePointer୦ctrie୮amainNode୮8int୮9(&n.prev, old)
-//line ctrie.go2:828
- if instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8int୮9(&in.main, old, n) {
-//line ctrie.go2:828
-  instantiate୦୦gcasComplete୦int(in, n, ct)
 //line ctrie.go2:830
+func instantiate୦୦gcas୦int(in *instantiate୦୦iNode୦int, old, n *instantiate୦୦mainNode୦int, ct *instantiate୦୦Ctrie୦int,) bool {
+//line ctrie.go2:830
+ instantiate୦gatomic୦StorePointer୦ctrie୮amainNode୮8int୮9(&n.prev, old)
+//line ctrie.go2:832
+ if instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8int୮9(&in.main, old, n) {
+//line ctrie.go2:832
+  instantiate୦୦gcasComplete୦int(in, n, ct)
+//line ctrie.go2:834
   return instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8int୮9(&n.prev) == nil
 	}
 	return false
@@ -3215,7 +3212,7 @@ func instantiate୦୦newMainNode୦int(x *instantiate୦୦sNode୦int, xhc uin
 	return &instantiate୦୦mainNode୦int{lNode: l}
 }
 
-//line ctrie.go2:769
+//line ctrie.go2:773
 func instantiate୦୦clean୦int(i *instantiate୦୦iNode୦int, lev uint, ctrie *instantiate୦୦Ctrie୦int,) bool {
 	main := instantiate୦୦gcasRead୦int(i, ctrie)
 	if main.cNode != nil {
@@ -3224,19 +3221,19 @@ func instantiate୦୦clean୦int(i *instantiate୦୦iNode୦int, lev uint, ctr
 	return true
 }
 
-//line ctrie.go2:972
+//line ctrie.go2:976
 func instantiate୦୦z୦int() int {
 			var v int
 
-//line ctrie.go2:974
+//line ctrie.go2:978
  return v
 }
-//line ctrie.go2:777
+//line ctrie.go2:781
 func instantiate୦୦cleanReadOnly୦int(tn *instantiate୦୦tNode୦int, lev uint, p *instantiate୦୦iNode୦int, ctrie *instantiate୦୦Ctrie୦int, entry *instantiate୦୦Entry୦int,) (val int, exists bool, ok bool) {
 	if !ctrie.readOnly {
-//line ctrie.go2:778
+//line ctrie.go2:782
   instantiate୦୦clean୦int(p, lev-5, ctrie)
-//line ctrie.go2:780
+//line ctrie.go2:784
   return instantiate୦୦z୦int(), false, false
 	}
 	if tn.sNode.entry.hash == entry.hash && bytes.Equal(tn.sNode.entry.Key, entry.Key) {
@@ -3244,7 +3241,7 @@ func instantiate୦୦cleanReadOnly୦int(tn *instantiate୦୦tNode୦int, lev 
 	}
 	return instantiate୦୦z୦int(), false, true
 }
-//line ctrie.go2:727
+//line ctrie.go2:731
 func instantiate୦୦toContracted୦int(cn *instantiate୦୦cNode୦int, lev uint) *instantiate୦୦mainNode୦int {
 	if lev > 0 && len(cn.array) == 1 {
 		switch branch := cn.array[0].(type) {
@@ -3257,7 +3254,7 @@ func instantiate୦୦toContracted୦int(cn *instantiate୦୦cNode୦int, lev u
 	return &instantiate୦୦mainNode୦int{cNode: cn}
 }
 
-//line ctrie.go2:788
+//line ctrie.go2:792
 func instantiate୦୦cleanParent୦int(p, i *instantiate୦୦iNode୦int, hc uint32, lev uint, ctrie *instantiate୦୦Ctrie୦int, startGen *generation) {
 	main := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8int୮9(&i.main)
 	pMain := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8int୮9(&p.main)
@@ -3268,15 +3265,15 @@ func instantiate୦୦cleanParent୦int(p, i *instantiate୦୦iNode୦int, hc u
 			if sub == i && main.tNode != nil {
 				ncn := pMain.cNode.updated(pos, instantiate୦୦resurrect୦int(i, main), i.gen)
 				if !instantiate୦୦gcas୦int(p, pMain, instantiate୦୦toContracted୦int(ncn, lev), ctrie) && ctrie.readRoot().gen == startGen {
-//line ctrie.go2:797
+//line ctrie.go2:801
      instantiate୦୦cleanParent୦int(p, i, hc, lev, ctrie, startGen)
-//line ctrie.go2:799
+//line ctrie.go2:803
     }
 			}
 		}
 	}
 }
-//line ctrie.go2:758
+//line ctrie.go2:762
 func instantiate୦୦entomb୦int(m *instantiate୦୦sNode୦int,) *instantiate୦୦mainNode୦int {
 	return &instantiate୦୦mainNode୦int{tNode: &instantiate୦୦tNode୦int{m}}
 }
@@ -3291,7 +3288,7 @@ func instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8int୮9(addr **inst
 
 //line ctrie_test.go2:6
 type instantiate୦୦rdcssDescriptor୦int struct {
-//line ctrie.go2:887
+//line ctrie.go2:891
  old *instantiate୦୦iNode୦int
 	expected  *instantiate୦୦mainNode୦int
 	nv        *instantiate୦୦iNode୦int
@@ -3383,7 +3380,7 @@ type instantiate୦୦Entry୦interface୮4୮5 struct {
  hash uint32
 }
 
-//line ctrie.go2:836
+//line ctrie.go2:840
 func instantiate୦୦gcasRead୦interface୮4୮5(in *instantiate୦୦iNode୦interface୮4୮5, ctrie *instantiate୦୦Ctrie୦interface୮4୮5,) *instantiate୦୦mainNode୦interface୮4୮5 {
 	m := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&in.main)
 	prev := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&m.prev)
@@ -3393,15 +3390,17 @@ func instantiate୦୦gcasRead୦interface୮4୮5(in *instantiate୦୦iNode୦
 	return instantiate୦୦gcasComplete୦interface୮4୮5(in, m, ctrie)
 }
 
-//line ctrie.go2:843
+//line ctrie.go2:847
 type instantiate୦୦Iter୦interface୮4୮5 struct {
-//line ctrie.go2:384
- c     *instantiate୦୦Ctrie୦interface୮4୮5
-			stack []instantiate୦୦iterFrame୦interface୮4୮5
-			curr  *instantiate୦୦Entry୦interface୮4୮5
+//line ctrie.go2:385
+ c *instantiate୦୦Ctrie୦interface୮4୮5
+
+//line ctrie.go2:389
+ stack []instantiate୦୦iterFrame୦interface୮4୮5
+	curr *instantiate୦୦Entry୦interface୮4୮5
 }
 
-//line ctrie.go2:399
+//line ctrie.go2:403
 func (i *instantiate୦୦Iter୦interface୮4୮5,) Next() bool {
 	i.curr = nil
 	for i.curr == nil && len(i.stack) > 0 {
@@ -3484,21 +3483,21 @@ func (i *instantiate୦୦Iter୦interface୮4୮5,) push(f func(*instantiate୦
 	return elem
 }
 
-//line ctrie.go2:479
+//line ctrie.go2:483
 type instantiate୦୦sNode୦interface୮4୮5 struct {
 //line ctrie.go2:265
  entry *instantiate୦୦Entry୦interface୮4୮5
 }
 
-//line ctrie.go2:826
-func instantiate୦୦gcas୦interface୮4୮5(in *instantiate୦୦iNode୦interface୮4୮5, old, n *instantiate୦୦mainNode୦interface୮4୮5, ct *instantiate୦୦Ctrie୦interface୮4୮5,) bool {
-//line ctrie.go2:826
- instantiate୦gatomic୦StorePointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&n.prev, old)
-//line ctrie.go2:828
- if instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&in.main, old, n) {
-//line ctrie.go2:828
-  instantiate୦୦gcasComplete୦interface୮4୮5(in, n, ct)
 //line ctrie.go2:830
+func instantiate୦୦gcas୦interface୮4୮5(in *instantiate୦୦iNode୦interface୮4୮5, old, n *instantiate୦୦mainNode୦interface୮4୮5, ct *instantiate୦୦Ctrie୦interface୮4୮5,) bool {
+//line ctrie.go2:830
+ instantiate୦gatomic୦StorePointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&n.prev, old)
+//line ctrie.go2:832
+ if instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&in.main, old, n) {
+//line ctrie.go2:832
+  instantiate୦୦gcasComplete୦interface୮4୮5(in, n, ct)
+//line ctrie.go2:834
   return instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&n.prev) == nil
 	}
 	return false
@@ -3530,7 +3529,7 @@ func instantiate୦୦newMainNode୦interface୮4୮5(x *instantiate୦୦sNode�
 	return &instantiate୦୦mainNode୦interface୮4୮5{lNode: l}
 }
 
-//line ctrie.go2:769
+//line ctrie.go2:773
 func instantiate୦୦clean୦interface୮4୮5(i *instantiate୦୦iNode୦interface୮4୮5, lev uint, ctrie *instantiate୦୦Ctrie୦interface୮4୮5,) bool {
 	main := instantiate୦୦gcasRead୦interface୮4୮5(i, ctrie)
 	if main.cNode != nil {
@@ -3539,21 +3538,21 @@ func instantiate୦୦clean୦interface୮4୮5(i *instantiate୦୦iNode୦inte
 	return true
 }
 
-//line ctrie.go2:972
+//line ctrie.go2:976
 func instantiate୦୦z୦interface୮4୮5() interface{} {
 			var v interface{}
 
-//line ctrie.go2:974
+//line ctrie.go2:978
  return v
 }
-//line ctrie.go2:777
+//line ctrie.go2:781
 func instantiate୦୦cleanReadOnly୦interface୮4୮5(tn *instantiate୦୦tNode୦interface୮4୮5, lev uint, p *instantiate୦୦iNode୦interface୮4୮5, ctrie *instantiate୦୦Ctrie୦interface୮4୮5, entry *instantiate୦୦Entry୦interface୮4୮5,) (val interface {
-//line ctrie.go2:777
+//line ctrie.go2:781
 }, exists bool, ok bool) {
 	if !ctrie.readOnly {
-//line ctrie.go2:778
+//line ctrie.go2:782
   instantiate୦୦clean୦interface୮4୮5(p, lev-5, ctrie)
-//line ctrie.go2:780
+//line ctrie.go2:784
   return instantiate୦୦z୦interface୮4୮5(), false, false
 	}
 	if tn.sNode.entry.hash == entry.hash && bytes.Equal(tn.sNode.entry.Key, entry.Key) {
@@ -3561,7 +3560,7 @@ func instantiate୦୦cleanReadOnly୦interface୮4୮5(tn *instantiate୦୦tNo
 	}
 	return instantiate୦୦z୦interface୮4୮5(), false, true
 }
-//line ctrie.go2:727
+//line ctrie.go2:731
 func instantiate୦୦toContracted୦interface୮4୮5(cn *instantiate୦୦cNode୦interface୮4୮5, lev uint) *instantiate୦୦mainNode୦interface୮4୮5 {
 	if lev > 0 && len(cn.array) == 1 {
 		switch branch := cn.array[0].(type) {
@@ -3574,7 +3573,7 @@ func instantiate୦୦toContracted୦interface୮4୮5(cn *instantiate୦୦cNod
 	return &instantiate୦୦mainNode୦interface୮4୮5{cNode: cn}
 }
 
-//line ctrie.go2:788
+//line ctrie.go2:792
 func instantiate୦୦cleanParent୦interface୮4୮5(p, i *instantiate୦୦iNode୦interface୮4୮5, hc uint32, lev uint, ctrie *instantiate୦୦Ctrie୦interface୮4୮5, startGen *generation) {
 	main := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&i.main)
 	pMain := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&p.main)
@@ -3585,15 +3584,15 @@ func instantiate୦୦cleanParent୦interface୮4୮5(p, i *instantiate୦୦iNo
 			if sub == i && main.tNode != nil {
 				ncn := pMain.cNode.updated(pos, instantiate୦୦resurrect୦interface୮4୮5(i, main), i.gen)
 				if !instantiate୦୦gcas୦interface୮4୮5(p, pMain, instantiate୦୦toContracted୦interface୮4୮5(ncn, lev), ctrie) && ctrie.readRoot().gen == startGen {
-//line ctrie.go2:797
+//line ctrie.go2:801
      instantiate୦୦cleanParent୦interface୮4୮5(p, i, hc, lev, ctrie, startGen)
-//line ctrie.go2:799
+//line ctrie.go2:803
     }
 			}
 		}
 	}
 }
-//line ctrie.go2:758
+//line ctrie.go2:762
 func instantiate୦୦entomb୦interface୮4୮5(m *instantiate୦୦sNode୦interface୮4୮5,) *instantiate୦୦mainNode୦interface୮4୮5 {
 	return &instantiate୦୦mainNode୦interface୮4୮5{tNode: &instantiate୦୦tNode୦interface୮4୮5{m}}
 }
@@ -3608,7 +3607,7 @@ func instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8interface୮4୮5�
 
 //line ctrie_test.go2:6
 type instantiate୦୦rdcssDescriptor୦interface୮4୮5 struct {
-//line ctrie.go2:887
+//line ctrie.go2:891
  old *instantiate୦୦iNode୦interface୮4୮5
 	expected  *instantiate୦୦mainNode୦interface୮4୮5
 	nv        *instantiate୦୦iNode୦interface୮4୮5
@@ -3698,7 +3697,7 @@ type instantiate୦୦Entry୦bool struct {
 	hash  uint32
 }
 
-//line ctrie.go2:836
+//line ctrie.go2:840
 func instantiate୦୦gcasRead୦bool(in *instantiate୦୦iNode୦bool, ctrie *instantiate୦୦Ctrie୦bool,) *instantiate୦୦mainNode୦bool {
 	m := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8bool୮9(&in.main)
 	prev := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8bool୮9(&m.prev)
@@ -3708,15 +3707,17 @@ func instantiate୦୦gcasRead୦bool(in *instantiate୦୦iNode୦bool, ctrie *
 	return instantiate୦୦gcasComplete୦bool(in, m, ctrie)
 }
 
-//line ctrie.go2:843
+//line ctrie.go2:847
 type instantiate୦୦Iter୦bool struct {
-//line ctrie.go2:384
- c     *instantiate୦୦Ctrie୦bool
-			stack []instantiate୦୦iterFrame୦bool
-			curr  *instantiate୦୦Entry୦bool
+//line ctrie.go2:385
+ c *instantiate୦୦Ctrie୦bool
+
+//line ctrie.go2:389
+ stack []instantiate୦୦iterFrame୦bool
+	curr *instantiate୦୦Entry୦bool
 }
 
-//line ctrie.go2:399
+//line ctrie.go2:403
 func (i *instantiate୦୦Iter୦bool,) Next() bool {
 	i.curr = nil
 	for i.curr == nil && len(i.stack) > 0 {
@@ -3799,21 +3800,21 @@ func (i *instantiate୦୦Iter୦bool,) push(f func(*instantiate୦୦Iter୦boo
 	return elem
 }
 
-//line ctrie.go2:479
+//line ctrie.go2:483
 type instantiate୦୦sNode୦bool struct {
 //line ctrie.go2:265
  entry *instantiate୦୦Entry୦bool
 }
 
-//line ctrie.go2:826
-func instantiate୦୦gcas୦bool(in *instantiate୦୦iNode୦bool, old, n *instantiate୦୦mainNode୦bool, ct *instantiate୦୦Ctrie୦bool,) bool {
-//line ctrie.go2:826
- instantiate୦gatomic୦StorePointer୦ctrie୮amainNode୮8bool୮9(&n.prev, old)
-//line ctrie.go2:828
- if instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8bool୮9(&in.main, old, n) {
-//line ctrie.go2:828
-  instantiate୦୦gcasComplete୦bool(in, n, ct)
 //line ctrie.go2:830
+func instantiate୦୦gcas୦bool(in *instantiate୦୦iNode୦bool, old, n *instantiate୦୦mainNode୦bool, ct *instantiate୦୦Ctrie୦bool,) bool {
+//line ctrie.go2:830
+ instantiate୦gatomic୦StorePointer୦ctrie୮amainNode୮8bool୮9(&n.prev, old)
+//line ctrie.go2:832
+ if instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8bool୮9(&in.main, old, n) {
+//line ctrie.go2:832
+  instantiate୦୦gcasComplete୦bool(in, n, ct)
+//line ctrie.go2:834
   return instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8bool୮9(&n.prev) == nil
 	}
 	return false
@@ -3845,7 +3846,7 @@ func instantiate୦୦newMainNode୦bool(x *instantiate୦୦sNode୦bool, xhc u
 	return &instantiate୦୦mainNode୦bool{lNode: l}
 }
 
-//line ctrie.go2:769
+//line ctrie.go2:773
 func instantiate୦୦clean୦bool(i *instantiate୦୦iNode୦bool, lev uint, ctrie *instantiate୦୦Ctrie୦bool,) bool {
 	main := instantiate୦୦gcasRead୦bool(i, ctrie)
 	if main.cNode != nil {
@@ -3854,19 +3855,19 @@ func instantiate୦୦clean୦bool(i *instantiate୦୦iNode୦bool, lev uint, c
 	return true
 }
 
-//line ctrie.go2:972
+//line ctrie.go2:976
 func instantiate୦୦z୦bool() bool {
 			var v bool
 
-//line ctrie.go2:974
+//line ctrie.go2:978
  return v
 }
-//line ctrie.go2:777
+//line ctrie.go2:781
 func instantiate୦୦cleanReadOnly୦bool(tn *instantiate୦୦tNode୦bool, lev uint, p *instantiate୦୦iNode୦bool, ctrie *instantiate୦୦Ctrie୦bool, entry *instantiate୦୦Entry୦bool,) (val bool, exists bool, ok bool) {
 	if !ctrie.readOnly {
-//line ctrie.go2:778
+//line ctrie.go2:782
   instantiate୦୦clean୦bool(p, lev-5, ctrie)
-//line ctrie.go2:780
+//line ctrie.go2:784
   return instantiate୦୦z୦bool(), false, false
 	}
 	if tn.sNode.entry.hash == entry.hash && bytes.Equal(tn.sNode.entry.Key, entry.Key) {
@@ -3874,7 +3875,7 @@ func instantiate୦୦cleanReadOnly୦bool(tn *instantiate୦୦tNode୦bool, le
 	}
 	return instantiate୦୦z୦bool(), false, true
 }
-//line ctrie.go2:727
+//line ctrie.go2:731
 func instantiate୦୦toContracted୦bool(cn *instantiate୦୦cNode୦bool, lev uint) *instantiate୦୦mainNode୦bool {
 	if lev > 0 && len(cn.array) == 1 {
 		switch branch := cn.array[0].(type) {
@@ -3887,7 +3888,7 @@ func instantiate୦୦toContracted୦bool(cn *instantiate୦୦cNode୦bool, lev
 	return &instantiate୦୦mainNode୦bool{cNode: cn}
 }
 
-//line ctrie.go2:788
+//line ctrie.go2:792
 func instantiate୦୦cleanParent୦bool(p, i *instantiate୦୦iNode୦bool, hc uint32, lev uint, ctrie *instantiate୦୦Ctrie୦bool, startGen *generation) {
 	main := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8bool୮9(&i.main)
 	pMain := instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8bool୮9(&p.main)
@@ -3898,15 +3899,15 @@ func instantiate୦୦cleanParent୦bool(p, i *instantiate୦୦iNode୦bool, hc
 			if sub == i && main.tNode != nil {
 				ncn := pMain.cNode.updated(pos, instantiate୦୦resurrect୦bool(i, main), i.gen)
 				if !instantiate୦୦gcas୦bool(p, pMain, instantiate୦୦toContracted୦bool(ncn, lev), ctrie) && ctrie.readRoot().gen == startGen {
-//line ctrie.go2:797
+//line ctrie.go2:801
      instantiate୦୦cleanParent୦bool(p, i, hc, lev, ctrie, startGen)
-//line ctrie.go2:799
+//line ctrie.go2:803
     }
 			}
 		}
 	}
 }
-//line ctrie.go2:758
+//line ctrie.go2:762
 func instantiate୦୦entomb୦bool(m *instantiate୦୦sNode୦bool,) *instantiate୦୦mainNode୦bool {
 	return &instantiate୦୦mainNode୦bool{tNode: &instantiate୦୦tNode୦bool{m}}
 }
@@ -3921,7 +3922,7 @@ func instantiate୦gatomic୦LoadPointer୦ctrie୮aiNode୮8bool୮9(addr **ins
 
 //line ctrie_test.go2:6
 type instantiate୦୦rdcssDescriptor୦bool struct {
-//line ctrie.go2:887
+//line ctrie.go2:891
  old *instantiate୦୦iNode୦bool
 	expected  *instantiate୦୦mainNode୦bool
 	nv        *instantiate୦୦iNode୦bool
@@ -4012,7 +4013,7 @@ func instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8string୮9(addr 
 //line ctrie_test.go2:6
 }
 
-//line ctrie.go2:846
+//line ctrie.go2:850
 func instantiate୦୦gcasComplete୦string(i *instantiate୦୦iNode୦string, m *instantiate୦୦mainNode୦string, ctrie *instantiate୦୦Ctrie୦string,) *instantiate୦୦mainNode୦string {
 	for {
 		if m == nil {
@@ -4041,17 +4042,17 @@ func instantiate୦୦gcasComplete୦string(i *instantiate୦୦iNode୦string, 
 			}
 			continue
 		}
-//line ctrie.go2:873
+//line ctrie.go2:877
   instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8string୮9(&m.prev, prev, &instantiate୦୦mainNode୦string{failed: prev})
-//line ctrie.go2:878
+//line ctrie.go2:882
   m = instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8string୮9(&i.main)
 		return instantiate୦୦gcasComplete୦string(i, m, ctrie)
 	}
 }
 
-//line ctrie.go2:881
+//line ctrie.go2:885
 type instantiate୦୦iterFrame୦string struct {
-//line ctrie.go2:390
+//line ctrie.go2:394
  iter  func(*instantiate୦୦Iter୦string, *instantiate୦୦iterFrame୦string,) bool
 			iNode *instantiate୦୦iNode୦string
 			array []branch
@@ -4066,7 +4067,7 @@ func instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8string
 //line ctrie_test.go2:13
 }
 
-//line ctrie.go2:740
+//line ctrie.go2:744
 func instantiate୦୦toCompressed୦string(cn *instantiate୦୦cNode୦string, lev uint) *instantiate୦୦mainNode୦string {
 	tmpArray := make([]branch, len(cn.array))
 	for i, sub := range cn.array {
@@ -4085,7 +4086,7 @@ func instantiate୦୦toCompressed୦string(cn *instantiate୦୦cNode୦string,
 	return instantiate୦୦toContracted୦string(&instantiate୦୦cNode୦string{bmp: cn.bmp, array: tmpArray}, lev)
 }
 
-//line ctrie.go2:762
+//line ctrie.go2:766
 func instantiate୦୦resurrect୦string(iNode *instantiate୦୦iNode୦string, main *instantiate୦୦mainNode୦string,) branch {
 	if main.tNode != nil {
 		return main.tNode.untombed()
@@ -4101,7 +4102,7 @@ func instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8int୮9(addr **i
 //line ctrie_test.go2:6
 }
 
-//line ctrie.go2:846
+//line ctrie.go2:850
 func instantiate୦୦gcasComplete୦int(i *instantiate୦୦iNode୦int, m *instantiate୦୦mainNode୦int, ctrie *instantiate୦୦Ctrie୦int,) *instantiate୦୦mainNode୦int {
 	for {
 		if m == nil {
@@ -4130,17 +4131,17 @@ func instantiate୦୦gcasComplete୦int(i *instantiate୦୦iNode୦int, m *ins
 			}
 			continue
 		}
-//line ctrie.go2:873
+//line ctrie.go2:877
   instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8int୮9(&m.prev, prev, &instantiate୦୦mainNode୦int{failed: prev})
-//line ctrie.go2:878
+//line ctrie.go2:882
   m = instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8int୮9(&i.main)
 		return instantiate୦୦gcasComplete୦int(i, m, ctrie)
 	}
 }
 
-//line ctrie.go2:881
+//line ctrie.go2:885
 type instantiate୦୦iterFrame୦int struct {
-//line ctrie.go2:390
+//line ctrie.go2:394
  iter  func(*instantiate୦୦Iter୦int, *instantiate୦୦iterFrame୦int,) bool
 			iNode *instantiate୦୦iNode୦int
 			array []branch
@@ -4155,7 +4156,7 @@ func instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8int୮
 //line ctrie_test.go2:13
 }
 
-//line ctrie.go2:740
+//line ctrie.go2:744
 func instantiate୦୦toCompressed୦int(cn *instantiate୦୦cNode୦int, lev uint) *instantiate୦୦mainNode୦int {
 	tmpArray := make([]branch, len(cn.array))
 	for i, sub := range cn.array {
@@ -4174,7 +4175,7 @@ func instantiate୦୦toCompressed୦int(cn *instantiate୦୦cNode୦int, lev u
 	return instantiate୦୦toContracted୦int(&instantiate୦୦cNode୦int{bmp: cn.bmp, array: tmpArray}, lev)
 }
 
-//line ctrie.go2:762
+//line ctrie.go2:766
 func instantiate୦୦resurrect୦int(iNode *instantiate୦୦iNode୦int, main *instantiate୦୦mainNode୦int,) branch {
 	if main.tNode != nil {
 		return main.tNode.untombed()
@@ -4190,7 +4191,7 @@ func instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8interface୮4୮
 //line ctrie_test.go2:6
 }
 
-//line ctrie.go2:846
+//line ctrie.go2:850
 func instantiate୦୦gcasComplete୦interface୮4୮5(i *instantiate୦୦iNode୦interface୮4୮5, m *instantiate୦୦mainNode୦interface୮4୮5, ctrie *instantiate୦୦Ctrie୦interface୮4୮5,) *instantiate୦୦mainNode୦interface୮4୮5 {
 	for {
 		if m == nil {
@@ -4219,17 +4220,17 @@ func instantiate୦୦gcasComplete୦interface୮4୮5(i *instantiate୦୦iNode
 			}
 			continue
 		}
-//line ctrie.go2:873
+//line ctrie.go2:877
   instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&m.prev, prev, &instantiate୦୦mainNode୦interface୮4୮5{failed: prev})
-//line ctrie.go2:878
+//line ctrie.go2:882
   m = instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8interface୮4୮5୮9(&i.main)
 		return instantiate୦୦gcasComplete୦interface୮4୮5(i, m, ctrie)
 	}
 }
 
-//line ctrie.go2:881
+//line ctrie.go2:885
 type instantiate୦୦iterFrame୦interface୮4୮5 struct {
-//line ctrie.go2:390
+//line ctrie.go2:394
  iter  func(*instantiate୦୦Iter୦interface୮4୮5, *instantiate୦୦iterFrame୦interface୮4୮5,) bool
 			iNode *instantiate୦୦iNode୦interface୮4୮5
 			array []branch
@@ -4244,7 +4245,7 @@ func instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8interf
 //line ctrie_test.go2:13
 }
 
-//line ctrie.go2:740
+//line ctrie.go2:744
 func instantiate୦୦toCompressed୦interface୮4୮5(cn *instantiate୦୦cNode୦interface୮4୮5, lev uint) *instantiate୦୦mainNode୦interface୮4୮5 {
 	tmpArray := make([]branch, len(cn.array))
 	for i, sub := range cn.array {
@@ -4263,7 +4264,7 @@ func instantiate୦୦toCompressed୦interface୮4୮5(cn *instantiate୦୦cNod
 	return instantiate୦୦toContracted୦interface୮4୮5(&instantiate୦୦cNode୦interface୮4୮5{bmp: cn.bmp, array: tmpArray}, lev)
 }
 
-//line ctrie.go2:762
+//line ctrie.go2:766
 func instantiate୦୦resurrect୦interface୮4୮5(iNode *instantiate୦୦iNode୦interface୮4୮5, main *instantiate୦୦mainNode୦interface୮4୮5,) branch {
 	if main.tNode != nil {
 		return main.tNode.untombed()
@@ -4279,7 +4280,7 @@ func instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8bool୮9(addr **
 //line ctrie_test.go2:6
 }
 
-//line ctrie.go2:846
+//line ctrie.go2:850
 func instantiate୦୦gcasComplete୦bool(i *instantiate୦୦iNode୦bool, m *instantiate୦୦mainNode୦bool, ctrie *instantiate୦୦Ctrie୦bool,) *instantiate୦୦mainNode୦bool {
 	for {
 		if m == nil {
@@ -4308,17 +4309,17 @@ func instantiate୦୦gcasComplete୦bool(i *instantiate୦୦iNode୦bool, m *i
 			}
 			continue
 		}
-//line ctrie.go2:873
+//line ctrie.go2:877
   instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8bool୮9(&m.prev, prev, &instantiate୦୦mainNode୦bool{failed: prev})
-//line ctrie.go2:878
+//line ctrie.go2:882
   m = instantiate୦gatomic୦LoadPointer୦ctrie୮amainNode୮8bool୮9(&i.main)
 		return instantiate୦୦gcasComplete୦bool(i, m, ctrie)
 	}
 }
 
-//line ctrie.go2:881
+//line ctrie.go2:885
 type instantiate୦୦iterFrame୦bool struct {
-//line ctrie.go2:390
+//line ctrie.go2:394
  iter  func(*instantiate୦୦Iter୦bool, *instantiate୦୦iterFrame୦bool,) bool
 			iNode *instantiate୦୦iNode୦bool
 			array []branch
@@ -4333,7 +4334,7 @@ func instantiate୦gatomic୦CompareAndSwapPointer୦ctrie୮amainNode୮8bool�
 //line ctrie_test.go2:13
 }
 
-//line ctrie.go2:740
+//line ctrie.go2:744
 func instantiate୦୦toCompressed୦bool(cn *instantiate୦୦cNode୦bool, lev uint) *instantiate୦୦mainNode୦bool {
 	tmpArray := make([]branch, len(cn.array))
 	for i, sub := range cn.array {
@@ -4352,7 +4353,7 @@ func instantiate୦୦toCompressed୦bool(cn *instantiate୦୦cNode୦bool, lev
 	return instantiate୦୦toContracted୦bool(&instantiate୦୦cNode୦bool{bmp: cn.bmp, array: tmpArray}, lev)
 }
 
-//line ctrie.go2:762
+//line ctrie.go2:766
 func instantiate୦୦resurrect୦bool(iNode *instantiate୦୦iNode୦bool, main *instantiate୦୦mainNode୦bool,) branch {
 	if main.tNode != nil {
 		return main.tNode.untombed()
@@ -4360,32 +4361,32 @@ func instantiate୦୦resurrect୦bool(iNode *instantiate୦୦iNode୦bool, mai
 	return iNode
 }
 
-//line ctrie.go2:767
+//line ctrie.go2:771
 type _ bytes.Buffer
 
-//line ctrie.go2:767
+//line ctrie.go2:771
 var _ = errors.As
 
-//line ctrie.go2:767
+//line ctrie.go2:771
 type _ gatomic.Importable୦
-//line ctrie.go2:767
+//line ctrie.go2:771
 type _ hash.Hash
 
-//line ctrie.go2:767
+//line ctrie.go2:771
 var _ = fnv.New128
-//line ctrie.go2:767
+//line ctrie.go2:771
 var _ = strconv.AppendBool
 
-//line ctrie.go2:767
+//line ctrie.go2:771
 type _ sync.Cond
 
-//line ctrie.go2:767
+//line ctrie.go2:771
 var _ = atomic.AddInt32
-//line ctrie.go2:767
+//line ctrie.go2:771
 var _ = testing.AllocsPerRun
 
-//line ctrie.go2:767
+//line ctrie.go2:771
 const _ = time.ANSIC
 
-//line ctrie.go2:767
+//line ctrie.go2:771
 type _ unsafe.Pointer

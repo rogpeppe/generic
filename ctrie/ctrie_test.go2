@@ -200,7 +200,7 @@ func TestConcurrency2(t *testing.T) {
 	}()
 
 	wg.Wait()
-	assertEqual(t, 10000, ctrie.Size())
+	assertEqual(t, 10000, ctrie.Len())
 }
 
 func TestSnapshot(t *testing.T) {
@@ -382,12 +382,12 @@ func TestIteratorCoversTNodes(t *testing.T) {
 	}
 }
 
-func TestSize(t *testing.T) {
+func TestLen(t *testing.T) {
 	ctrie := New(int)(nil)
 	for i := 0; i < 10; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
-	assertEqual(t, 10, ctrie.Size())
+	assertEqual(t, 10, ctrie.Len())
 }
 
 func TestClear(t *testing.T) {
@@ -395,13 +395,13 @@ func TestClear(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
-	assertEqual(t, 10, ctrie.Size())
+	assertEqual(t, 10, ctrie.Len())
 	snapshot := ctrie.Snapshot()
 
 	ctrie.Clear()
 
-	assertEqual(t, 0, ctrie.Size())
-	assertEqual(t, 10, snapshot.Size())
+	assertEqual(t, 0, ctrie.Len())
+	assertEqual(t, 10, snapshot.Len())
 }
 
 type fakehash struct{}

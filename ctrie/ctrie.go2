@@ -355,14 +355,14 @@ func (c *Ctrie(Value)) Clear() {
 	}
 }
 
-// Size returns the number of keys in the Ctrie.
-func (c *Ctrie(Value)) Size() uint {
+// Len returns the number of keys in the Ctrie.
+func (c *Ctrie(Value)) Len() int {
 	// TODO: The size operation can be optimized further by caching the size
 	// information in main nodes of a read-only Ctrie – this reduces the
 	// amortized complexity of the size operation to O(1) because the size
 	// computation is amortized across the update operations that occurred
 	// since the last snapshot.
-	size := uint(0)
+	size := 0
 	for iter := c.Iterator(); iter.Next(); {
 		size++
 	}
@@ -380,8 +380,12 @@ func (c *Ctrie(Value)) Iterator() *Iter(Value) {
 	return iter
 }
 
+// Iter represents an iterator through all items in the trie.
 type Iter(type Value) struct {
 	c *Ctrie(Value)
+	// stack simulates the recursion stack that we'd have
+	// if we were doing a conventional recursive iteration
+	// through the data structure.
 	stack []iterFrame(Value)
 	curr *Entry(Value)
 }
