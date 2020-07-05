@@ -28,8 +28,7 @@ import (
 	"errors"
 	"hash"
 	"hash/fnv"
-	"sync/atomic"
-	"unsafe"
+	"github.com/rogpeppe/generic/gatomic"
 )
 
 const (
@@ -78,8 +77,7 @@ type iNode struct {
 func (i *iNode) copyToGen(gen *generation, ctrie *Ctrie) *iNode {
 	nin := &iNode{gen: gen}
 	main := gcasRead(i, ctrie)
-	atomic.StorePointer(
-		(*unsafe.Pointer)(unsafe.Pointer(&nin.main)), unsafe.Pointer(main))
+	gatomic.StorePointer(&nin.main, main)
 	return nin
 }
 
@@ -690,8 +688,7 @@ func toCompressed(cn *cNode, lev uint) *mainNode {
 		switch sub.(type) {
 		case *iNode:
 			inode := sub.(*iNode)
-			mainPtr := (*unsafe.Pointer)(unsafe.Pointer(&inode.main))
-			main := (*mainNode)(atomic.LoadPointer(mainPtr))
+			main := gatomic.LoadPointer(&inode.main)
 			tmpArray[i] = resurrect(inode, main)
 		case *sNode:
 			tmpArray[i] = sub
@@ -734,12 +731,8 @@ func cleanReadOnly(tn *tNode, lev uint, p *iNode, ctrie *Ctrie, entry *Entry) (v
 }
 
 func cleanParent(p, i *iNode, hc uint32, lev uint, ctrie *Ctrie, startGen *generation) {
-	var (
-		mainPtr  = (*unsafe.Pointer)(unsafe.Pointer(&i.main))
-		main     = (*mainNode)(atomic.LoadPointer(mainPtr))
-		pMainPtr = (*unsafe.Pointer)(unsafe.Pointer(&p.main))
-		pMain    = (*mainNode)(atomic.LoadPointer(pMainPtr))
-	)
+	main := gatomic.LoadPointer(&i.main)
+	pMain := gatomic.LoadPointer(&p.main)
 	if pMain.cNode != nil {
 		flag, pos := flagPos(hc, lev, pMain.cNode.bmp)
 		if pMain.cNode.bmp&flag != 0 {
@@ -776,21 +769,18 @@ func bitCount(x uint32) uint32 {
 // write occurs only if the Ctrie root generation has remained the same in
 // addition to the I-node having the expected value.
 func gcas(in *iNode, old, n *mainNode, ct *Ctrie) bool {
-	prevPtr := (*unsafe.Pointer)(unsafe.Pointer(&n.prev))
-	atomic.StorePointer(prevPtr, unsafe.Pointer(old))
-	if atomic.CompareAndSwapPointer(
-		(*unsafe.Pointer)(unsafe.Pointer(&in.main)),
-		unsafe.Pointer(old), unsafe.Pointer(n)) {
+	gatomic.StorePointer(&n.prev, old)
+	if gatomic.CompareAndSwapPointer(&in.main, old, n) {
 		gcasComplete(in, n, ct)
-		return atomic.LoadPointer(prevPtr) == nil
+		return gatomic.LoadPointer(&n.prev) == nil
 	}
 	return false
 }
 
 // gcasRead performs a GCAS-linearizable read of the I-node's main node.
 func gcasRead(in *iNode, ctrie *Ctrie) *mainNode {
-	m := (*mainNode)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&in.main))))
-	prev := (*mainNode)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&m.prev))))
+	m := gatomic.LoadPointer(&in.main)
+	prev := gatomic.LoadPointer(&m.prev)
 	if prev == nil {
 		return m
 	}
@@ -803,8 +793,7 @@ func gcasComplete(i *iNode, m *mainNode, ctrie *Ctrie) *mainNode {
 		if m == nil {
 			return nil
 		}
-		prev := (*mainNode)(atomic.LoadPointer(
-			(*unsafe.Pointer)(unsafe.Pointer(&m.prev))))
+		prev := gatomic.LoadPointer(&m.prev)
 		root := ctrie.rdcssReadRoot(true)
 		if prev == nil {
 			return m
@@ -813,19 +802,16 @@ func gcasComplete(i *iNode, m *mainNode, ctrie *Ctrie) *mainNode {
 		if prev.failed != nil {
 			// Signals GCAS failure. Swap old value back into I-node.
 			fn := prev.failed
-			if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&i.main)),
-				unsafe.Pointer(m), unsafe.Pointer(fn)) {
+			if gatomic.CompareAndSwapPointer(&i.main, m, fn) {
 				return fn
 			}
-			m = (*mainNode)(atomic.LoadPointer(
-				(*unsafe.Pointer)(unsafe.Pointer(&i.main))))
+			m = gatomic.LoadPointer(&i.main)
 			continue
 		}
 
 		if root.gen == i.gen && !ctrie.readOnly {
 			// Commit GCAS.
-			if atomic.CompareAndSwapPointer(
-				(*unsafe.Pointer)(unsafe.Pointer(&m.prev)), unsafe.Pointer(prev), nil) {
+			if gatomic.CompareAndSwapPointer(&m.prev, prev, nil) {
 				return m
 			}
 			continue
@@ -833,11 +819,8 @@ func gcasComplete(i *iNode, m *mainNode, ctrie *Ctrie) *mainNode {
 
 		// Generations did not match. Store failed node on prev to signal
 		// I-node's main node must be set back to the previous value.
-		atomic.CompareAndSwapPointer(
-			(*unsafe.Pointer)(unsafe.Pointer(&m.prev)),
-			unsafe.Pointer(prev),
-			unsafe.Pointer(&mainNode{failed: prev}))
-		m = (*mainNode)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&i.main))))
+		gatomic.CompareAndSwapPointer(&m.prev, prev, &mainNode{failed: prev})
+		m = gatomic.LoadPointer(&i.main)
 		return gcasComplete(i, m, ctrie)
 	}
 }
@@ -862,7 +845,7 @@ func (c *Ctrie) readRoot() *iNode {
 // rdcssReadRoot performs a RDCSS-linearizable read of the Ctrie root with the
 // given priority.
 func (c *Ctrie) rdcssReadRoot(abort bool) *iNode {
-	r := (*iNode)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&c.root))))
+	r := gatomic.LoadPointer(&c.root)
 	if r.rdcss != nil {
 		return c.rdcssComplete(abort)
 	}
@@ -882,7 +865,7 @@ func (c *Ctrie) rdcssRoot(old *iNode, expected *mainNode, nv *iNode) bool {
 	}
 	if c.casRoot(old, desc) {
 		c.rdcssComplete(false)
-		return atomic.LoadInt32(&desc.rdcss.committed) == 1
+		return gatomic.LoadInt32(&desc.rdcss.committed) == 1
 	}
 	return false
 }
@@ -890,7 +873,7 @@ func (c *Ctrie) rdcssRoot(old *iNode, expected *mainNode, nv *iNode) bool {
 // rdcssComplete commits the RDCSS operation.
 func (c *Ctrie) rdcssComplete(abort bool) *iNode {
 	for {
-		r := (*iNode)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&c.root))))
+		r := gatomic.LoadPointer(&c.root)
 		if r.rdcss == nil {
 			return r
 		}
@@ -913,7 +896,7 @@ func (c *Ctrie) rdcssComplete(abort bool) *iNode {
 		if oldeMain == exp {
 			// Commit the RDCSS.
 			if c.casRoot(r, nv) {
-				atomic.StoreInt32(&desc.committed, 1)
+				gatomic.StoreInt32(&desc.committed, 1)
 				return nv
 			}
 			continue
@@ -928,6 +911,5 @@ func (c *Ctrie) rdcssComplete(abort bool) *iNode {
 // casRoot performs a CAS on the Ctrie root.
 func (c *Ctrie) casRoot(ov, nv *iNode) bool {
 	c.assertReadWrite()
-	return atomic.CompareAndSwapPointer(
-		(*unsafe.Pointer)(unsafe.Pointer(&c.root)), unsafe.Pointer(ov), unsafe.Pointer(nv))
+	return gatomic.CompareAndSwapPointer(&c.root, ov, nv)
 }

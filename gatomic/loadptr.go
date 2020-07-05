@@ -2,7 +2,7 @@
 
 
 //line loadptr.go2:1
-package atomic
+package gatomic
 
 //line loadptr.go2:1
 import (
@@ -15,13 +15,22 @@ import (
 //line loadptr.go2:1
 )
 
-//line loadptr.go2:1
+//line loadptr.go2:24
+func LoadInt32(x *int32) int32 {
+	return atomic.LoadInt32(x)
+}
+
+func StoreInt32(x *int32, v int32) {
+	atomic.StoreInt32(x, v)
+}
+
+//line loadptr.go2:30
 type Importable୦ int
 
-//line loadptr.go2:1
+//line loadptr.go2:30
 var _ = atomic.AddInt32
-//line loadptr.go2:1
+//line loadptr.go2:30
 var _ = testing.AllocsPerRun
 
-//line loadptr.go2:1
+//line loadptr.go2:30
 type _ unsafe.Pointer

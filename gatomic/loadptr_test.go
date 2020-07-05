@@ -2,7 +2,7 @@
 
 
 //line loadptr_test.go2:1
-package atomic
+package gatomic
 
 //line loadptr_test.go2:1
 import (
@@ -28,7 +28,7 @@ func TestLoadStorePointer(t *testing.T) {
 		t.Fatal("unexpected value")
 	}
 }
-//line loadptr.go2:13
+//line loadptr.go2:12
 func instantiate୦୦StorePointer୦int(addr **int, val *int,) {
 	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(addr)), unsafe.Pointer(val))
 }
