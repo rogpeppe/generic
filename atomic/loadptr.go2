@@ -1,0 +1,15 @@
+package atomic
+
+import (
+	"unsafe"
+	"sync/atomic"
+)
+
+func LoadPointer(type T)(addr **T) *T {
+	return (*T)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(addr))))
+}
+
+
+func StorePointer(type T)(addr **T, val *T) {
+	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(addr)), unsafe.Pointer(val))
+}
