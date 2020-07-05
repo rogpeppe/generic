@@ -220,14 +220,14 @@ func TestConcurrency2(t *testing.T) {
 
 	go func() {
 		for i := 0; i < 10000; i++ {
-			ctrie.Snapshot()
+			ctrie.Clone()
 		}
 		wg.Done()
 	}()
 
 	go func() {
 		for i := 0; i < 10000; i++ {
-			ctrie.ReadOnlySnapshot()
+			ctrie.RClone()
 		}
 		wg.Done()
 	}()
@@ -238,13 +238,13 @@ func TestConcurrency2(t *testing.T) {
 //line ctrie_test.go2:204
 }
 
-func TestSnapshot(t *testing.T) {
+func TestClone(t *testing.T) {
 	ctrie := instantiate୦୦New୦interface୮4୮5(nil)
 	for i := 0; i < 100; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
 
-				snapshot := ctrie.Snapshot()
+				snapshot := ctrie.Clone()
 
 //line ctrie_test.go2:215
  for i := 0; i < 100; i++ {
@@ -274,7 +274,7 @@ func TestSnapshot(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
-				snapshot = ctrie.Snapshot()
+				snapshot = ctrie.Clone()
 
 //line ctrie_test.go2:241
  for i := 0; i < 100; i++ {
@@ -303,7 +303,7 @@ func TestSnapshot(t *testing.T) {
 				assertFalse(t, ok)
 
 //line ctrie_test.go2:264
- snapshot2 := snapshot.Snapshot()
+ snapshot2 := snapshot.Clone()
 	for i := 0; i < 100; i++ {
 		_, ok := snapshot2.Lookup([]byte(strconv.Itoa(i)))
 		assertFalse(t, ok)
@@ -324,13 +324,13 @@ func TestSnapshot(t *testing.T) {
 //line ctrie_test.go2:279
 }
 
-func TestReadOnlySnapshot(t *testing.T) {
+func TestRClone(t *testing.T) {
 	ctrie := instantiate୦୦New୦int(nil)
 	for i := 0; i < 100; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
 
-				snapshot := ctrie.ReadOnlySnapshot()
+				snapshot := ctrie.RClone()
 
 //line ctrie_test.go2:290
  for i := 0; i < 100; i++ {
@@ -363,7 +363,7 @@ func TestReadOnlySnapshot(t *testing.T) {
 	}()
 
 //line ctrie_test.go2:316
- snapshot2 := snapshot.Snapshot()
+ snapshot2 := snapshot.Clone()
 	for i := 50; i < 100; i++ {
 		ctrie.Remove([]byte(strconv.Itoa(i)))
 	}
@@ -456,7 +456,7 @@ func TestClear(t *testing.T) {
 //line ctrie_test.go2:397
  instantiate୦୦assertEqual୦int(t, 10, ctrie.Len())
 //line ctrie_test.go2:399
- snapshot := ctrie.Snapshot()
+ snapshot := ctrie.Clone()
 
 				ctrie.Clear()
 //line ctrie_test.go2:401
@@ -549,7 +549,7 @@ func BenchmarkRemove(b *testing.B) {
 	}
 }
 
-func BenchmarkSnapshot(b *testing.B) {
+func BenchmarkClone(b *testing.B) {
 	numItems := 1000
 	ctrie := instantiate୦୦New୦int(nil)
 	for i := 0; i < numItems; i++ {
@@ -558,11 +558,11 @@ func BenchmarkSnapshot(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ctrie.Snapshot()
+		ctrie.Clone()
 	}
 }
 
-func BenchmarkReadOnlySnapshot(b *testing.B) {
+func BenchmarkRClone(b *testing.B) {
 	numItems := 1000
 	ctrie := instantiate୦୦New୦int(nil)
 	for i := 0; i < numItems; i++ {
@@ -571,7 +571,7 @@ func BenchmarkReadOnlySnapshot(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ctrie.ReadOnlySnapshot()
+		ctrie.RClone()
 	}
 }
 
@@ -696,17 +696,17 @@ func (c *instantiate୦୦Ctrie୦string,) Remove(key []byte) (string,
 }
 
 //line ctrie.go2:312
-func (c *instantiate୦୦Ctrie୦string,) Snapshot() *instantiate୦୦Ctrie୦string {
-	return c.snapshot(c.readOnly)
+func (c *instantiate୦୦Ctrie୦string,) Clone() *instantiate୦୦Ctrie୦string {
+	return c.clone(c.readOnly)
 }
 
 //line ctrie.go2:318
-func (c *instantiate୦୦Ctrie୦string,) ReadOnlySnapshot() *instantiate୦୦Ctrie୦string {
-	return c.snapshot(true)
+func (c *instantiate୦୦Ctrie୦string,) RClone() *instantiate୦୦Ctrie୦string {
+	return c.clone(true)
 }
 
 //line ctrie.go2:323
-func (c *instantiate୦୦Ctrie୦string,) snapshot(readOnly bool) *instantiate୦୦Ctrie୦string {
+func (c *instantiate୦୦Ctrie୦string,) clone(readOnly bool) *instantiate୦୦Ctrie୦string {
 	if readOnly && c.readOnly {
 		return c
 	}
@@ -732,7 +732,7 @@ func (c *instantiate୦୦Ctrie୦string,) Clear() {
 		root := c.readRoot()
 		gen := &generation{}
 		newRoot := &instantiate୦୦iNode୦string{
-			main: &instantiate୦୦mainNode୦string{cNode: &instantiate୦୦cNode୦string{array: make([]branch, 0), gen: gen}},
+			main: &instantiate୦୦mainNode୦string{cNode: &instantiate୦୦cNode୦string{gen: gen}},
 			gen:  gen,
 		}
 		if c.rdcssRoot(root, instantiate୦୦gcasRead୦string(root, c), newRoot) {
@@ -757,14 +757,14 @@ func (c *instantiate୦୦Ctrie୦string,) Iterator() *instantiate୦୦Iter୦s
 	iter := &instantiate୦୦Iter୦string{
 		c: c,
 	}
-	iter.push((*instantiate୦୦Iter୦string).mainIter).iNode = c.ReadOnlySnapshot().readRoot()
+	iter.push((*instantiate୦୦Iter୦string).mainIter).iNode = c.RClone().readRoot()
 	return iter
 }
 
 //line ctrie.go2:485
 func (c *instantiate୦୦Ctrie୦string,) assertReadWrite() {
 	if c.readOnly {
-		panic("Cannot modify read-only snapshot")
+		panic("Cannot modify read-only clone")
 	}
 }
 
@@ -1216,17 +1216,17 @@ func (c *instantiate୦୦Ctrie୦int,) Remove(key []byte) (int,
 }
 
 //line ctrie.go2:312
-func (c *instantiate୦୦Ctrie୦int,) Snapshot() *instantiate୦୦Ctrie୦int {
-	return c.snapshot(c.readOnly)
+func (c *instantiate୦୦Ctrie୦int,) Clone() *instantiate୦୦Ctrie୦int {
+	return c.clone(c.readOnly)
 }
 
 //line ctrie.go2:318
-func (c *instantiate୦୦Ctrie୦int,) ReadOnlySnapshot() *instantiate୦୦Ctrie୦int {
-	return c.snapshot(true)
+func (c *instantiate୦୦Ctrie୦int,) RClone() *instantiate୦୦Ctrie୦int {
+	return c.clone(true)
 }
 
 //line ctrie.go2:323
-func (c *instantiate୦୦Ctrie୦int,) snapshot(readOnly bool) *instantiate୦୦Ctrie୦int {
+func (c *instantiate୦୦Ctrie୦int,) clone(readOnly bool) *instantiate୦୦Ctrie୦int {
 	if readOnly && c.readOnly {
 		return c
 	}
@@ -1252,7 +1252,7 @@ func (c *instantiate୦୦Ctrie୦int,) Clear() {
 		root := c.readRoot()
 		gen := &generation{}
 		newRoot := &instantiate୦୦iNode୦int{
-			main: &instantiate୦୦mainNode୦int{cNode: &instantiate୦୦cNode୦int{array: make([]branch, 0), gen: gen}},
+			main: &instantiate୦୦mainNode୦int{cNode: &instantiate୦୦cNode୦int{gen: gen}},
 			gen:  gen,
 		}
 		if c.rdcssRoot(root, instantiate୦୦gcasRead୦int(root, c), newRoot) {
@@ -1277,14 +1277,14 @@ func (c *instantiate୦୦Ctrie୦int,) Iterator() *instantiate୦୦Iter୦int 
 	iter := &instantiate୦୦Iter୦int{
 		c: c,
 	}
-	iter.push((*instantiate୦୦Iter୦int).mainIter).iNode = c.ReadOnlySnapshot().readRoot()
+	iter.push((*instantiate୦୦Iter୦int).mainIter).iNode = c.RClone().readRoot()
 	return iter
 }
 
 //line ctrie.go2:485
 func (c *instantiate୦୦Ctrie୦int,) assertReadWrite() {
 	if c.readOnly {
-		panic("Cannot modify read-only snapshot")
+		panic("Cannot modify read-only clone")
 	}
 }
 
@@ -1736,17 +1736,17 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) Remove(key []byte) (interf
 }
 
 //line ctrie.go2:312
-func (c *instantiate୦୦Ctrie୦interface୮4୮5,) Snapshot() *instantiate୦୦Ctrie୦interface୮4୮5 {
-	return c.snapshot(c.readOnly)
+func (c *instantiate୦୦Ctrie୦interface୮4୮5,) Clone() *instantiate୦୦Ctrie୦interface୮4୮5 {
+	return c.clone(c.readOnly)
 }
 
 //line ctrie.go2:318
-func (c *instantiate୦୦Ctrie୦interface୮4୮5,) ReadOnlySnapshot() *instantiate୦୦Ctrie୦interface୮4୮5 {
-	return c.snapshot(true)
+func (c *instantiate୦୦Ctrie୦interface୮4୮5,) RClone() *instantiate୦୦Ctrie୦interface୮4୮5 {
+	return c.clone(true)
 }
 
 //line ctrie.go2:323
-func (c *instantiate୦୦Ctrie୦interface୮4୮5,) snapshot(readOnly bool) *instantiate୦୦Ctrie୦interface୮4୮5 {
+func (c *instantiate୦୦Ctrie୦interface୮4୮5,) clone(readOnly bool) *instantiate୦୦Ctrie୦interface୮4୮5 {
 	if readOnly && c.readOnly {
 		return c
 	}
@@ -1772,7 +1772,7 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) Clear() {
 		root := c.readRoot()
 		gen := &generation{}
 		newRoot := &instantiate୦୦iNode୦interface୮4୮5{
-			main: &instantiate୦୦mainNode୦interface୮4୮5{cNode: &instantiate୦୦cNode୦interface୮4୮5{array: make([]branch, 0), gen: gen}},
+			main: &instantiate୦୦mainNode୦interface୮4୮5{cNode: &instantiate୦୦cNode୦interface୮4୮5{gen: gen}},
 			gen:  gen,
 		}
 		if c.rdcssRoot(root, instantiate୦୦gcasRead୦interface୮4୮5(root, c), newRoot) {
@@ -1797,14 +1797,14 @@ func (c *instantiate୦୦Ctrie୦interface୮4୮5,) Iterator() *instantiate୦
 	iter := &instantiate୦୦Iter୦interface୮4୮5{
 		c: c,
 	}
-	iter.push((*instantiate୦୦Iter୦interface୮4୮5).mainIter).iNode = c.ReadOnlySnapshot().readRoot()
+	iter.push((*instantiate୦୦Iter୦interface୮4୮5).mainIter).iNode = c.RClone().readRoot()
 	return iter
 }
 
 //line ctrie.go2:485
 func (c *instantiate୦୦Ctrie୦interface୮4୮5,) assertReadWrite() {
 	if c.readOnly {
-		panic("Cannot modify read-only snapshot")
+		panic("Cannot modify read-only clone")
 	}
 }
 
@@ -2255,17 +2255,17 @@ func (c *instantiate୦୦Ctrie୦bool,) Remove(key []byte) (
 }
 
 //line ctrie.go2:312
-func (c *instantiate୦୦Ctrie୦bool,) Snapshot() *instantiate୦୦Ctrie୦bool {
-	return c.snapshot(c.readOnly)
+func (c *instantiate୦୦Ctrie୦bool,) Clone() *instantiate୦୦Ctrie୦bool {
+	return c.clone(c.readOnly)
 }
 
 //line ctrie.go2:318
-func (c *instantiate୦୦Ctrie୦bool,) ReadOnlySnapshot() *instantiate୦୦Ctrie୦bool {
-	return c.snapshot(true)
+func (c *instantiate୦୦Ctrie୦bool,) RClone() *instantiate୦୦Ctrie୦bool {
+	return c.clone(true)
 }
 
 //line ctrie.go2:323
-func (c *instantiate୦୦Ctrie୦bool,) snapshot(readOnly bool) *instantiate୦୦Ctrie୦bool {
+func (c *instantiate୦୦Ctrie୦bool,) clone(readOnly bool) *instantiate୦୦Ctrie୦bool {
 	if readOnly && c.readOnly {
 		return c
 	}
@@ -2291,7 +2291,7 @@ func (c *instantiate୦୦Ctrie୦bool,) Clear() {
 		root := c.readRoot()
 		gen := &generation{}
 		newRoot := &instantiate୦୦iNode୦bool{
-			main: &instantiate୦୦mainNode୦bool{cNode: &instantiate୦୦cNode୦bool{array: make([]branch, 0), gen: gen}},
+			main: &instantiate୦୦mainNode୦bool{cNode: &instantiate୦୦cNode୦bool{gen: gen}},
 			gen:  gen,
 		}
 		if c.rdcssRoot(root, instantiate୦୦gcasRead୦bool(root, c), newRoot) {
@@ -2316,14 +2316,14 @@ func (c *instantiate୦୦Ctrie୦bool,) Iterator() *instantiate୦୦Iter୦boo
 	iter := &instantiate୦୦Iter୦bool{
 		c: c,
 	}
-	iter.push((*instantiate୦୦Iter୦bool).mainIter).iNode = c.ReadOnlySnapshot().readRoot()
+	iter.push((*instantiate୦୦Iter୦bool).mainIter).iNode = c.RClone().readRoot()
 	return iter
 }
 
 //line ctrie.go2:485
 func (c *instantiate୦୦Ctrie୦bool,) assertReadWrite() {
 	if c.readOnly {
-		panic("Cannot modify read-only snapshot")
+		panic("Cannot modify read-only clone")
 	}
 }
 

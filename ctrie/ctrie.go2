@@ -17,9 +17,9 @@ limitations under the License.
 /*
 Package ctrie provides an implementation of the Ctrie data structure, which is
 a concurrent, lock-free hash trie. This data structure was originally presented
-in the paper Concurrent Tries with Efficient Non-Blocking Snapshots:
+in the paper Concurrent Tries with Efficient Non-Blocking Clones:
 
-https://axel22.github.io/resources/docs/ctries-snapshot.pdf
+https://axel22.github.io/resources/docs/ctries-clone.pdf
 */
 package ctrie
 
@@ -54,7 +54,7 @@ type Ctrie(type Value) struct {
 	hashFactory HashFactory
 }
 
-// generation demarcates Ctrie snapshots. We use a heap-allocated reference
+// generation demarcates Ctrie clones. We use a heap-allocated reference
 // instead of an integer to avoid integer overflows. Struct must have a field
 // on it since two distinct zero-size variables may have the same address in
 // memory.
@@ -307,20 +307,20 @@ func (c *Ctrie(Value)) Remove(key []byte) (Value, bool) {
 	return c.remove(&Entry(Value){Key: key, hash: c.hash(key)})
 }
 
-// Snapshot returns a stable, point-in-time snapshot of the Ctrie. If the Ctrie
+// Clone returns a stable, point-in-time clone of the Ctrie. If the Ctrie
 // is read-only, the returned Ctrie will also be read-only.
-func (c *Ctrie(Value)) Snapshot() *Ctrie(Value) {
-	return c.snapshot(c.readOnly)
+func (c *Ctrie(Value)) Clone() *Ctrie(Value) {
+	return c.clone(c.readOnly)
 }
 
-// ReadOnlySnapshot returns a stable, point-in-time snapshot of the Ctrie which
-// is read-only. Write operations on a read-only snapshot will panic.
-func (c *Ctrie(Value)) ReadOnlySnapshot() *Ctrie(Value) {
-	return c.snapshot(true)
+// RClone returns a stable, point-in-time clone of the Ctrie which
+// is read-only. Write operations on a read-only clone will panic.
+func (c *Ctrie(Value)) RClone() *Ctrie(Value) {
+	return c.clone(true)
 }
 
-// snapshot wraps up the CAS logic to make a snapshot or a read-only snapshot.
-func (c *Ctrie(Value)) snapshot(readOnly bool) *Ctrie(Value) {
+// clone wraps up the CAS logic to make a clone or a read-only clone.
+func (c *Ctrie(Value)) clone(readOnly bool) *Ctrie(Value) {
 	if readOnly && c.readOnly {
 		return c
 	}
@@ -329,11 +329,11 @@ func (c *Ctrie(Value)) snapshot(readOnly bool) *Ctrie(Value) {
 		main := gcasRead(root, c)
 		if c.rdcssRoot(root, main, root.copyToGen(&generation{}, c)) {
 			if readOnly {
-				// For a read-only snapshot, we can share the old generation
+				// For a read-only clone, we can share the old generation
 				// root.
 				return newCtrie(root, c.hashFactory, readOnly)
 			}
-			// For a read-write snapshot, we need to take a copy of the root
+			// For a read-write clone, we need to take a copy of the root
 			// in the new generation.
 			return newCtrie(c.readRoot().copyToGen(&generation{}, c), c.hashFactory, readOnly)
 		}
@@ -346,7 +346,7 @@ func (c *Ctrie(Value)) Clear() {
 		root := c.readRoot()
 		gen := &generation{}
 		newRoot := &iNode(Value){
-			main: &mainNode(Value){cNode: &cNode(Value){array: make([]branch, 0), gen: gen}},
+			main: &mainNode(Value){cNode: &cNode(Value){gen: gen}},
 			gen:  gen,
 		}
 		if c.rdcssRoot(root, gcasRead(root, c), newRoot) {
@@ -361,7 +361,7 @@ func (c *Ctrie(Value)) Len() int {
 	// information in main nodes of a read-only Ctrie – this reduces the
 	// amortized complexity of the size operation to O(1) because the size
 	// computation is amortized across the update operations that occurred
-	// since the last snapshot.
+	// since the last clone.
 	size := 0
 	for iter := c.Iterator(); iter.Next(); {
 		size++
@@ -376,7 +376,7 @@ func (c *Ctrie(Value)) Iterator() *Iter(Value) {
 	iter := &Iter(Value){
 		c: c,
 	}
-	iter.push((*Iter(Value)).mainIter).iNode = c.ReadOnlySnapshot().readRoot()
+	iter.push((*Iter(Value)).mainIter).iNode = c.RClone().readRoot()
 	return iter
 }
 
@@ -484,7 +484,7 @@ func (i *Iter(Value)) push(f func(*Iter(Value), *iterFrame(Value)) bool) *iterFr
 
 func (c *Ctrie(Value)) assertReadWrite() {
 	if c.readOnly {
-		panic("Cannot modify read-only snapshot")
+		panic("Cannot modify read-only clone")
 	}
 }
 
@@ -824,7 +824,7 @@ func bitCount(x uint32) uint32 {
 
 // gcas is a generation-compare-and-swap which has semantics similar to RDCSS,
 // but it does not create the intermediate object except in the case of
-// failures that occur due to the snapshot being taken. This ensures that the
+// failures that occur due to the clone being taken. This ensures that the
 // write occurs only if the Ctrie root generation has remained the same in
 // addition to the I-node having the expected value.
 func gcas(type Value)(in *iNode(Value), old, n *mainNode(Value), ct *Ctrie(Value)) bool {
@@ -912,7 +912,7 @@ func (c *Ctrie(Value)) rdcssReadRoot(abort bool) *iNode(Value) {
 }
 
 // rdcssRoot performs a RDCSS on the Ctrie root. This is used to create a
-// snapshot of the Ctrie by copying the root I-node and setting it to a new
+// clone of the Ctrie by copying the root I-node and setting it to a new
 // generation.
 func (c *Ctrie(Value)) rdcssRoot(old *iNode(Value), expected *mainNode(Value), nv *iNode(Value)) bool {
 	desc := &iNode(Value){

@@ -187,14 +187,14 @@ func TestConcurrency2(t *testing.T) {
 
 	go func() {
 		for i := 0; i < 10000; i++ {
-			ctrie.Snapshot()
+			ctrie.Clone()
 		}
 		wg.Done()
 	}()
 
 	go func() {
 		for i := 0; i < 10000; i++ {
-			ctrie.ReadOnlySnapshot()
+			ctrie.RClone()
 		}
 		wg.Done()
 	}()
@@ -203,13 +203,13 @@ func TestConcurrency2(t *testing.T) {
 	assertEqual(t, 10000, ctrie.Len())
 }
 
-func TestSnapshot(t *testing.T) {
+func TestClone(t *testing.T) {
 	ctrie := New(interface{})(nil)
 	for i := 0; i < 100; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
 
-	snapshot := ctrie.Snapshot()
+	snapshot := ctrie.Clone()
 
 	// Ensure snapshot contains expected keys.
 	for i := 0; i < 100; i++ {
@@ -235,7 +235,7 @@ func TestSnapshot(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
-	snapshot = ctrie.Snapshot()
+	snapshot = ctrie.Clone()
 
 	// Ensure snapshot is mutable.
 	for i := 0; i < 100; i++ {
@@ -261,7 +261,7 @@ func TestSnapshot(t *testing.T) {
 	assertFalse(t, ok)
 
 	// Ensure snapshots-of-snapshots work as expected.
-	snapshot2 := snapshot.Snapshot()
+	snapshot2 := snapshot.Clone()
 	for i := 0; i < 100; i++ {
 		_, ok := snapshot2.Lookup([]byte(strconv.Itoa(i)))
 		assertFalse(t, ok)
@@ -278,13 +278,13 @@ func TestSnapshot(t *testing.T) {
 	assertEqual(t, "man", val)
 }
 
-func TestReadOnlySnapshot(t *testing.T) {
+func TestRClone(t *testing.T) {
 	ctrie := New(int)(nil)
 	for i := 0; i < 100; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
 
-	snapshot := ctrie.ReadOnlySnapshot()
+	snapshot := ctrie.RClone()
 
 	// Ensure snapshot contains expected keys.
 	for i := 0; i < 100; i++ {
@@ -313,7 +313,7 @@ func TestReadOnlySnapshot(t *testing.T) {
 	}()
 
 	// Ensure snapshots-of-snapshots work as expected.
-	snapshot2 := snapshot.Snapshot()
+	snapshot2 := snapshot.Clone()
 	for i := 50; i < 100; i++ {
 		ctrie.Remove([]byte(strconv.Itoa(i)))
 	}
@@ -396,7 +396,7 @@ func TestClear(t *testing.T) {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
 	assertEqual(t, 10, ctrie.Len())
-	snapshot := ctrie.Snapshot()
+	snapshot := ctrie.Clone()
 
 	ctrie.Clear()
 
@@ -485,7 +485,7 @@ func BenchmarkRemove(b *testing.B) {
 	}
 }
 
-func BenchmarkSnapshot(b *testing.B) {
+func BenchmarkClone(b *testing.B) {
 	numItems := 1000
 	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
@@ -494,11 +494,11 @@ func BenchmarkSnapshot(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ctrie.Snapshot()
+		ctrie.Clone()
 	}
 }
 
-func BenchmarkReadOnlySnapshot(b *testing.B) {
+func BenchmarkRClone(b *testing.B) {
 	numItems := 1000
 	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
@@ -507,7 +507,7 @@ func BenchmarkReadOnlySnapshot(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ctrie.ReadOnlySnapshot()
+		ctrie.RClone()
 	}
 }
 
