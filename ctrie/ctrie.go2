@@ -283,9 +283,9 @@ func newCtrie(type Value)(root *iNode(Value), hashFactory HashFactory, readOnly 
 	}
 }
 
-// Insert adds the key-value pair to the Ctrie, replacing the existing value if
+// Set sets the value for the given key, replacing the existing value if
 // the key already exists.
-func (c *Ctrie(Value)) Insert(key []byte, value Value) {
+func (c *Ctrie(Value)) Set(key []byte, value Value) {
 	c.assertReadWrite()
 	c.insert(&Entry(Value){
 		Key:   key,
@@ -294,17 +294,23 @@ func (c *Ctrie(Value)) Insert(key []byte, value Value) {
 	})
 }
 
-// Lookup returns the value for the associated key or returns false if the key
-// doesn't exist.
-func (c *Ctrie(Value)) Lookup(key []byte) (Value, bool) {
-	return c.lookup(&Entry(Value){Key: key, hash: c.hash(key)})
+// Get returns the value for the associated key and
+// reports whether the key exists in the trie.
+func (c *Ctrie(Value)) Get(key []byte) (Value, bool) {
+	return c.lookup(&Entry(Value){
+		Key: key,
+		hash: c.hash(key),
+	})
 }
 
 // Remove deletes the value for the associated key, returning true if it was
 // removed or false if the entry doesn't exist.
 func (c *Ctrie(Value)) Remove(key []byte) (Value, bool) {
 	c.assertReadWrite()
-	return c.remove(&Entry(Value){Key: key, hash: c.hash(key)})
+	return c.remove(&Entry(Value){
+		Key: key,
+		hash: c.hash(key),
+	})
 }
 
 // Clone returns a stable, point-in-time clone of the Ctrie. If the Ctrie

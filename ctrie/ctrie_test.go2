@@ -28,36 +28,36 @@ import (
 func TestCtrie(t *testing.T) {
 	ctrie := New(string)(nil)
 
-	_, ok := ctrie.Lookup([]byte("foo"))
+	_, ok := ctrie.Get([]byte("foo"))
 	assertFalse(t, ok)
 
-	ctrie.Insert([]byte("foo"), "bar")
-	val, ok := ctrie.Lookup([]byte("foo"))
+	ctrie.Set([]byte("foo"), "bar")
+	val, ok := ctrie.Get([]byte("foo"))
 	assertTrue(t, ok)
 	assertEqual(t, "bar", val)
 
-	ctrie.Insert([]byte("fooooo"), "baz")
-	val, ok = ctrie.Lookup([]byte("foo"))
+	ctrie.Set([]byte("fooooo"), "baz")
+	val, ok = ctrie.Get([]byte("foo"))
 	assertTrue(t, ok)
 	assertEqual(t, "bar", val)
-	val, ok = ctrie.Lookup([]byte("fooooo"))
+	val, ok = ctrie.Get([]byte("fooooo"))
 	assertTrue(t, ok)
 	assertEqual(t, "baz", val)
 
 	for i := 0; i < 100; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), "blah")
+		ctrie.Set([]byte(strconv.Itoa(i)), "blah")
 	}
 	for i := 0; i < 100; i++ {
-		val, ok = ctrie.Lookup([]byte(strconv.Itoa(i)))
+		val, ok = ctrie.Get([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, "blah", val)
 	}
 
-	val, ok = ctrie.Lookup([]byte("foo"))
+	val, ok = ctrie.Get([]byte("foo"))
 	assertTrue(t, ok)
 	assertEqual(t, "bar", val)
-	ctrie.Insert([]byte("foo"), "qux")
-	val, ok = ctrie.Lookup([]byte("foo"))
+	ctrie.Set([]byte("foo"), "qux")
+	val, ok = ctrie.Get([]byte("foo"))
 	assertTrue(t, ok)
 	assertEqual(t, "qux", val)
 
@@ -89,19 +89,19 @@ func mockHashFactory() hash.Hash32 {
 	return &mockHash32{fnv.New32a()}
 }
 
-func TestInsertLNode(t *testing.T) {
+func TestSetLNode(t *testing.T) {
 	ctrie := New(int)(mockHashFactory)
 
 	for i := 0; i < 10; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 
 	for i := 0; i < 10; i++ {
-		val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
+		val, ok := ctrie.Get([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, i, val)
 	}
-	_, ok := ctrie.Lookup([]byte("11"))
+	_, ok := ctrie.Get([]byte("11"))
 	assertFalse(t, ok)
 
 	for i := 0; i < 10; i++ {
@@ -111,11 +111,11 @@ func TestInsertLNode(t *testing.T) {
 	}
 }
 
-func TestInsertTNode(t *testing.T) {
+func TestSetTNode(t *testing.T) {
 	ctrie := New(int)(nil)
 
 	for i := 0; i < 10000; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 
 	for i := 0; i < 5000; i++ {
@@ -123,11 +123,11 @@ func TestInsertTNode(t *testing.T) {
 	}
 
 	for i := 0; i < 10000; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 
 	for i := 0; i < 10000; i++ {
-		val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
+		val, ok := ctrie.Get([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, i, val)
 	}
@@ -140,14 +140,14 @@ func TestConcurrency(t *testing.T) {
 
 	go func() {
 		for i := 0; i < 10000; i++ {
-			ctrie.Insert([]byte(strconv.Itoa(i)), i)
+			ctrie.Set([]byte(strconv.Itoa(i)), i)
 		}
 		wg.Done()
 	}()
 
 	go func() {
 		for i := 0; i < 10000; i++ {
-			val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
+			val, ok := ctrie.Get([]byte(strconv.Itoa(i)))
 			if ok {
 				assertEqual(t, i, val)
 			}
@@ -170,14 +170,14 @@ func TestConcurrency2(t *testing.T) {
 
 	go func() {
 		for i := 0; i < 10000; i++ {
-			ctrie.Insert([]byte(strconv.Itoa(i)), i)
+			ctrie.Set([]byte(strconv.Itoa(i)), i)
 		}
 		wg.Done()
 	}()
 
 	go func() {
 		for i := 0; i < 10000; i++ {
-			val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
+			val, ok := ctrie.Get([]byte(strconv.Itoa(i)))
 			if ok {
 				assertEqual(t, i, val)
 			}
@@ -206,14 +206,14 @@ func TestConcurrency2(t *testing.T) {
 func TestClone(t *testing.T) {
 	ctrie := New(interface{})(nil)
 	for i := 0; i < 100; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 
 	snapshot := ctrie.Clone()
 
 	// Ensure snapshot contains expected keys.
 	for i := 0; i < 100; i++ {
-		val, ok := snapshot.Lookup([]byte(strconv.Itoa(i)))
+		val, ok := snapshot.Get([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, interface{}(i), val)
 	}
@@ -225,7 +225,7 @@ func TestClone(t *testing.T) {
 
 	// Ensure snapshot was unaffected by removals.
 	for i := 0; i < 100; i++ {
-		val, ok := snapshot.Lookup([]byte(strconv.Itoa(i)))
+		val, ok := snapshot.Get([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, interface{}(i), val)
 	}
@@ -233,7 +233,7 @@ func TestClone(t *testing.T) {
 	// New Ctrie and snapshot.
 	ctrie = New(interface{})(nil)
 	for i := 0; i < 100; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 	snapshot = ctrie.Clone()
 
@@ -241,39 +241,39 @@ func TestClone(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		snapshot.Remove([]byte(strconv.Itoa(i)))
 	}
-	snapshot.Insert([]byte("bat"), "man")
+	snapshot.Set([]byte("bat"), "man")
 
 	for i := 0; i < 100; i++ {
-		_, ok := snapshot.Lookup([]byte(strconv.Itoa(i)))
+		_, ok := snapshot.Get([]byte(strconv.Itoa(i)))
 		assertFalse(t, ok)
 	}
-	val, ok := snapshot.Lookup([]byte("bat"))
+	val, ok := snapshot.Get([]byte("bat"))
 	assertTrue(t, ok)
 	assertEqual(t, "man", val)
 
 	// Ensure original Ctrie was unaffected.
 	for i := 0; i < 100; i++ {
-		val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
+		val, ok := ctrie.Get([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, interface{}(i), val)
 	}
-	_, ok = ctrie.Lookup([]byte("bat"))
+	_, ok = ctrie.Get([]byte("bat"))
 	assertFalse(t, ok)
 
 	// Ensure snapshots-of-snapshots work as expected.
 	snapshot2 := snapshot.Clone()
 	for i := 0; i < 100; i++ {
-		_, ok := snapshot2.Lookup([]byte(strconv.Itoa(i)))
+		_, ok := snapshot2.Get([]byte(strconv.Itoa(i)))
 		assertFalse(t, ok)
 	}
-	val, ok = snapshot2.Lookup([]byte("bat"))
+	val, ok = snapshot2.Get([]byte("bat"))
 	assertTrue(t, ok)
 	assertEqual(t, "man", val)
 
 	snapshot2.Remove([]byte("bat"))
-	_, ok = snapshot2.Lookup([]byte("bat"))
+	_, ok = snapshot2.Get([]byte("bat"))
 	assertFalse(t, ok)
-	val, ok = snapshot.Lookup([]byte("bat"))
+	val, ok = snapshot.Get([]byte("bat"))
 	assertTrue(t, ok)
 	assertEqual(t, "man", val)
 }
@@ -281,14 +281,14 @@ func TestClone(t *testing.T) {
 func TestRClone(t *testing.T) {
 	ctrie := New(int)(nil)
 	for i := 0; i < 100; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 
 	snapshot := ctrie.RClone()
 
 	// Ensure snapshot contains expected keys.
 	for i := 0; i < 100; i++ {
-		val, ok := snapshot.Lookup([]byte(strconv.Itoa(i)))
+		val, ok := snapshot.Get([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, i, val)
 	}
@@ -299,7 +299,7 @@ func TestRClone(t *testing.T) {
 
 	// Ensure snapshot was unaffected by removals.
 	for i := 0; i < 100; i++ {
-		val, ok := snapshot.Lookup([]byte(strconv.Itoa(i)))
+		val, ok := snapshot.Get([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, i, val)
 	}
@@ -318,7 +318,7 @@ func TestRClone(t *testing.T) {
 		ctrie.Remove([]byte(strconv.Itoa(i)))
 	}
 	for i := 0; i < 100; i++ {
-		val, ok := snapshot2.Lookup([]byte(strconv.Itoa(i)))
+		val, ok := snapshot2.Get([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, i, val)
 	}
@@ -335,7 +335,7 @@ func TestRClone(t *testing.T) {
 func TestIterator(t *testing.T) {
 	ctrie := New(int)(nil)
 	for i := 0; i < 10; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 	expected := map[string]int{
 		"0": 0,
@@ -365,8 +365,8 @@ func TestIterator(t *testing.T) {
 func TestIteratorCoversTNodes(t *testing.T) {
 	ctrie := New(bool)(mockHashFactory)
 	// Add a pair of keys that collide (because we're using the mock hash).
-	ctrie.Insert([]byte("a"), true)
-	ctrie.Insert([]byte("b"), true)
+	ctrie.Set([]byte("a"), true)
+	ctrie.Set([]byte("b"), true)
 	// Delete one key, leaving exactly one sNode in the cNode.  This will
 	// trigger creation of a tNode.
 	ctrie.Remove([]byte("b"))
@@ -385,7 +385,7 @@ func TestIteratorCoversTNodes(t *testing.T) {
 func TestLen(t *testing.T) {
 	ctrie := New(int)(nil)
 	for i := 0; i < 10; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 	assertEqual(t, 10, ctrie.Len())
 }
@@ -393,7 +393,7 @@ func TestLen(t *testing.T) {
 func TestClear(t *testing.T) {
 	ctrie := New(int)(nil)
 	for i := 0; i < 10; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 	assertEqual(t, 10, ctrie.Len())
 	snapshot := ctrie.Clone()
@@ -436,38 +436,38 @@ func factory() hash.Hash32 {
 
 func TestHashCollision(t *testing.T) {
 	trie := New(int)(factory)
-	trie.Insert([]byte("foobar"), 1)
-	trie.Insert([]byte("zogzog"), 2)
-	trie.Insert([]byte("foobar"), 3)
-	val, exists := trie.Lookup([]byte("foobar"))
+	trie.Set([]byte("foobar"), 1)
+	trie.Set([]byte("zogzog"), 2)
+	trie.Set([]byte("foobar"), 3)
+	val, exists := trie.Get([]byte("foobar"))
 	assertTrue(t, exists)
 	assertEqual(t, 3, val)
 
 	trie.Remove([]byte("foobar"))
 
-	_, exists = trie.Lookup([]byte("foobar"))
+	_, exists = trie.Get([]byte("foobar"))
 	assertFalse(t, exists)
 }
 
-func BenchmarkInsert(b *testing.B) {
+func BenchmarkSet(b *testing.B) {
 	ctrie := New(int)(nil)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ctrie.Insert([]byte("foo"), 0)
+		ctrie.Set([]byte("foo"), 0)
 	}
 }
 
-func BenchmarkLookup(b *testing.B) {
+func BenchmarkGet(b *testing.B) {
 	numItems := 1000
 	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 	key := []byte(strconv.Itoa(numItems / 2))
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ctrie.Lookup(key)
+		ctrie.Get(key)
 	}
 }
 
@@ -475,7 +475,7 @@ func BenchmarkRemove(b *testing.B) {
 	numItems := 1000
 	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 	key := []byte(strconv.Itoa(numItems / 2))
 	b.ResetTimer()
@@ -489,7 +489,7 @@ func BenchmarkClone(b *testing.B) {
 	numItems := 1000
 	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 	b.ResetTimer()
 
@@ -502,7 +502,7 @@ func BenchmarkRClone(b *testing.B) {
 	numItems := 1000
 	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
-		ctrie.Insert([]byte(strconv.Itoa(i)), i)
+		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
 	b.ResetTimer()
 
