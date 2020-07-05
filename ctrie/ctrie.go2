@@ -60,211 +60,6 @@ type Ctrie(type Value) struct {
 // memory.
 type generation struct{ _ bool }
 
-// iNode is an indirection node. I-nodes remain present in the Ctrie even as
-// nodes above and below change. Thread-safety is achieved in part by
-// performing CAS operations on the I-node instead of the internal node array.
-type iNode(type Value) struct {
-	main *mainNode(Value)
-	gen  *generation
-
-	// rdcss is set during an RDCSS operation. The I-node is actually a wrapper
-	// around the descriptor in this case so that a single type is used during
-	// CAS operations on the root.
-	rdcss *rdcssDescriptor(Value)
-}
-
-// copyToGen returns a copy of this I-node copied to the given generation.
-func (i *iNode(Value)) copyToGen(gen *generation, ctrie *Ctrie(Value)) *iNode(Value) {
-	nin := &iNode(Value){gen: gen}
-	main := gcasRead(i, ctrie)
-	gatomic.StorePointer(&nin.main, main)
-	return nin
-}
-
-// mainNode is either a cNode, tNode, lNode, or failed node which makes up an
-// I-node.
-type mainNode(type Value) struct {
-	cNode  *cNode(Value)
-	tNode  *tNode(Value)
-	lNode  *lNode(Value)
-	failed *mainNode(Value)
-
-	// prev is set as a failed main node when we attempt to CAS and the
-	// I-node's generation does not match the root generation. This signals
-	// that the GCAS failed and the I-node's main node must be set back to the
-	// previous value.
-	prev *mainNode(Value)
-}
-
-// cNode is an internal main node containing a bitmap and the array with
-// references to branch nodes. A branch node is either another I-node or a
-// singleton S-node.
-type cNode(type Value) struct {
-	bmp   uint32
-	array []branch
-	gen   *generation
-}
-
-// newMainNode is a recursive constructor which creates a new mainNode. This
-// mainNode will consist of cNodes as long as the hashcode chunks of the two
-// keys are equal at the given level. If the level exceeds 2^w, an lNode is
-// created.
-func newMainNode(type Value)(x *sNode(Value), xhc uint32, y *sNode(Value), yhc uint32, lev uint, gen *generation) *mainNode(Value) {
-	if lev < exp2 {
-		xidx := (xhc >> lev) & 0x1f
-		yidx := (yhc >> lev) & 0x1f
-		bmp := uint32((1 << xidx) | (1 << yidx))
-
-		if xidx == yidx {
-			// Recurse when indexes are equal.
-			main := newMainNode(x, xhc, y, yhc, lev+w, gen)
-			iNode := &iNode(Value){main: main, gen: gen}
-			return &mainNode(Value){cNode: &cNode(Value){bmp, []branch{iNode}, gen}}
-		}
-		if xidx < yidx {
-			return &mainNode(Value){cNode: &cNode(Value){bmp, []branch{x, y}, gen}}
-		}
-		return &mainNode(Value){cNode: &cNode(Value){bmp, []branch{y, x}, gen}}
-	}
-	l := &lNode(Value){
-		head: y,
-		tail: &lNode(Value){
-			head: x,
-		},
-	}
-	return &mainNode(Value){lNode: l}
-}
-
-// inserted returns a copy of this cNode with the new entry at the given
-// position.
-func (c *cNode(Value)) inserted(pos, flag uint32, br branch, gen *generation) *cNode(Value) {
-	length := uint32(len(c.array))
-	bmp := c.bmp
-	array := make([]branch, length+1)
-	copy(array, c.array)
-	array[pos] = br
-	for i, x := pos, uint32(0); x < length-pos; i++ {
-		array[i+1] = c.array[i]
-		x++
-	}
-	ncn := &cNode(Value){bmp: bmp | flag, array: array, gen: gen}
-	return ncn
-}
-
-// updated returns a copy of this cNode with the entry at the given index
-// updated.
-func (c *cNode(Value)) updated(pos uint32, br branch, gen *generation) *cNode(Value) {
-	array := make([]branch, len(c.array))
-	copy(array, c.array)
-	array[pos] = br
-	ncn := &cNode(Value){bmp: c.bmp, array: array, gen: gen}
-	return ncn
-}
-
-// removed returns a copy of this cNode with the entry at the given index
-// removed.
-func (c *cNode(Value)) removed(pos, flag uint32, gen *generation) *cNode(Value) {
-	length := uint32(len(c.array))
-	bmp := c.bmp
-	array := make([]branch, length-1)
-	for i := uint32(0); i < pos; i++ {
-		array[i] = c.array[i]
-	}
-	for i, x := pos, uint32(0); x < length-pos-1; i++ {
-		array[i] = c.array[i+1]
-		x++
-	}
-	ncn := &cNode(Value){bmp: bmp ^ flag, array: array, gen: gen}
-	return ncn
-}
-
-// renewed returns a copy of this cNode with the I-nodes below it copied to the
-// given generation.
-func (c *cNode(Value)) renewed(gen *generation, ctrie *Ctrie(Value)) *cNode(Value) {
-	array := make([]branch, len(c.array))
-	for i, br := range c.array {
-		switch t := br.(type) {
-		case *iNode(Value):
-			array[i] = t.copyToGen(gen, ctrie)
-		default:
-			array[i] = br
-		}
-	}
-	return &cNode(Value){bmp: c.bmp, array: array, gen: gen}
-}
-
-// tNode is tomb node which is a special node used to ensure proper ordering
-// during removals.
-type tNode(type Value) struct {
-	sNode *sNode(Value)
-}
-
-// untombed returns the S-node contained by the T-node.
-func (t *tNode(Value)) untombed() *sNode(Value) {
-	return &sNode(Value){&Entry(Value){Key: t.sNode.entry.Key, hash: t.sNode.entry.hash, Value: t.sNode.entry.Value}}
-}
-
-// lNode is a list node which is a leaf node used to handle hashcode
-// collisions by keeping such keys in a persistent list.
-type lNode(type Value) struct {
-	head *sNode(Value)
-	tail *lNode(Value)
-}
-
-// lookup returns the value at the given entry in the L-node or returns false
-// if it's not contained.
-func (l *lNode(Value)) lookup(e *Entry(Value)) (Value, bool) {
-	for ; l != nil; l = l.tail {
-		if bytes.Equal(e.Key, l.head.entry.Key) {
-			return l.head.entry.Value, true
-		}
-	}
-	return z(Value)(), false
-}
-
-// inserted creates a new L-node with the added entry.
-func (l *lNode(Value)) inserted(entry *Entry(Value)) *lNode(Value) {
-	return &lNode(Value){
-		head: &sNode(Value){entry},
-		tail: l.removed(entry),
-	}
-}
-
-// removed creates a new L-node with the entry removed.
-func (l *lNode(Value)) removed(e *Entry(Value)) *lNode(Value) {
-	for l1 := l; l1 != nil; l1 = l1.tail {
-		if bytes.Equal(e.Key, l1.head.entry.Key) {
-			return l.remove(l1)
-		}
-	}
-	return l
-}
-
-func (l *lNode(Value)) remove(l1 *lNode(Value)) *lNode(Value) {
-	if l == l1 {
-		return l.tail
-	}
-	return &lNode(Value){
-		head: l.head,
-		tail: l.tail.remove(l1),
-	}
-}
-
-// branch is either *iNode or *sNode.
-type branch interface{}
-
-// Entry contains a Ctrie key-value pair.
-type Entry(type Value) struct {
-	Key   []byte
-	Value Value
-	hash  uint32
-}
-
-// sNode is a singleton node which contains a single key and value.
-type sNode(type Value) struct {
-	entry *Entry(Value)
-}
-
 // New creates an empty Ctrie which uses the provided HashFactory for key
 // hashing. If nil is passed in, it will default to FNV-1a hashing.
 func New(type Value)(hashFactory HashFactory) *Ctrie(Value) {
@@ -730,6 +525,211 @@ func (c *Ctrie(Value)) iremove(i *iNode(Value), entry *Entry(Value), lev uint, p
 	}
 }
 
+
+// iNode is an indirection node. I-nodes remain present in the Ctrie even as
+// nodes above and below change. Thread-safety is achieved in part by
+// performing CAS operations on the I-node instead of the internal node array.
+type iNode(type Value) struct {
+	main *mainNode(Value)
+	gen  *generation
+
+	// rdcss is set during an RDCSS operation. The I-node is actually a wrapper
+	// around the descriptor in this case so that a single type is used during
+	// CAS operations on the root.
+	rdcss *rdcssDescriptor(Value)
+}
+
+// copyToGen returns a copy of this I-node copied to the given generation.
+func (i *iNode(Value)) copyToGen(gen *generation, ctrie *Ctrie(Value)) *iNode(Value) {
+	nin := &iNode(Value){gen: gen}
+	main := gcasRead(i, ctrie)
+	gatomic.StorePointer(&nin.main, main)
+	return nin
+}
+
+// mainNode is either a cNode, tNode, lNode, or failed node which makes up an
+// I-node.
+type mainNode(type Value) struct {
+	cNode  *cNode(Value)
+	tNode  *tNode(Value)
+	lNode  *lNode(Value)
+	failed *mainNode(Value)
+
+	// prev is set as a failed main node when we attempt to CAS and the
+	// I-node's generation does not match the root generation. This signals
+	// that the GCAS failed and the I-node's main node must be set back to the
+	// previous value.
+	prev *mainNode(Value)
+}
+
+// cNode is an internal main node containing a bitmap and the array with
+// references to branch nodes. A branch node is either another I-node or a
+// singleton S-node.
+type cNode(type Value) struct {
+	bmp   uint32
+	array []branch
+	gen   *generation
+}
+
+// newMainNode is a recursive constructor which creates a new mainNode. This
+// mainNode will consist of cNodes as long as the hashcode chunks of the two
+// keys are equal at the given level. If the level exceeds 2^w, an lNode is
+// created.
+func newMainNode(type Value)(x *sNode(Value), xhc uint32, y *sNode(Value), yhc uint32, lev uint, gen *generation) *mainNode(Value) {
+	if lev < exp2 {
+		xidx := (xhc >> lev) & 0x1f
+		yidx := (yhc >> lev) & 0x1f
+		bmp := uint32((1 << xidx) | (1 << yidx))
+
+		if xidx == yidx {
+			// Recurse when indexes are equal.
+			main := newMainNode(x, xhc, y, yhc, lev+w, gen)
+			iNode := &iNode(Value){main: main, gen: gen}
+			return &mainNode(Value){cNode: &cNode(Value){bmp, []branch{iNode}, gen}}
+		}
+		if xidx < yidx {
+			return &mainNode(Value){cNode: &cNode(Value){bmp, []branch{x, y}, gen}}
+		}
+		return &mainNode(Value){cNode: &cNode(Value){bmp, []branch{y, x}, gen}}
+	}
+	l := &lNode(Value){
+		head: y,
+		tail: &lNode(Value){
+			head: x,
+		},
+	}
+	return &mainNode(Value){lNode: l}
+}
+
+// inserted returns a copy of this cNode with the new entry at the given
+// position.
+func (c *cNode(Value)) inserted(pos, flag uint32, br branch, gen *generation) *cNode(Value) {
+	length := uint32(len(c.array))
+	bmp := c.bmp
+	array := make([]branch, length+1)
+	copy(array, c.array)
+	array[pos] = br
+	for i, x := pos, uint32(0); x < length-pos; i++ {
+		array[i+1] = c.array[i]
+		x++
+	}
+	ncn := &cNode(Value){bmp: bmp | flag, array: array, gen: gen}
+	return ncn
+}
+
+// updated returns a copy of this cNode with the entry at the given index
+// updated.
+func (c *cNode(Value)) updated(pos uint32, br branch, gen *generation) *cNode(Value) {
+	array := make([]branch, len(c.array))
+	copy(array, c.array)
+	array[pos] = br
+	ncn := &cNode(Value){bmp: c.bmp, array: array, gen: gen}
+	return ncn
+}
+
+// removed returns a copy of this cNode with the entry at the given index
+// removed.
+func (c *cNode(Value)) removed(pos, flag uint32, gen *generation) *cNode(Value) {
+	length := uint32(len(c.array))
+	bmp := c.bmp
+	array := make([]branch, length-1)
+	for i := uint32(0); i < pos; i++ {
+		array[i] = c.array[i]
+	}
+	for i, x := pos, uint32(0); x < length-pos-1; i++ {
+		array[i] = c.array[i+1]
+		x++
+	}
+	ncn := &cNode(Value){bmp: bmp ^ flag, array: array, gen: gen}
+	return ncn
+}
+
+// renewed returns a copy of this cNode with the I-nodes below it copied to the
+// given generation.
+func (c *cNode(Value)) renewed(gen *generation, ctrie *Ctrie(Value)) *cNode(Value) {
+	array := make([]branch, len(c.array))
+	for i, br := range c.array {
+		switch t := br.(type) {
+		case *iNode(Value):
+			array[i] = t.copyToGen(gen, ctrie)
+		default:
+			array[i] = br
+		}
+	}
+	return &cNode(Value){bmp: c.bmp, array: array, gen: gen}
+}
+
+// tNode is tomb node which is a special node used to ensure proper ordering
+// during removals.
+type tNode(type Value) struct {
+	sNode *sNode(Value)
+}
+
+// untombed returns the S-node contained by the T-node.
+func (t *tNode(Value)) untombed() *sNode(Value) {
+	return &sNode(Value){&Entry(Value){Key: t.sNode.entry.Key, hash: t.sNode.entry.hash, Value: t.sNode.entry.Value}}
+}
+
+// lNode is a list node which is a leaf node used to handle hashcode
+// collisions by keeping such keys in a persistent list.
+type lNode(type Value) struct {
+	head *sNode(Value)
+	tail *lNode(Value)
+}
+
+// lookup returns the value at the given entry in the L-node or returns false
+// if it's not contained.
+func (l *lNode(Value)) lookup(e *Entry(Value)) (Value, bool) {
+	for ; l != nil; l = l.tail {
+		if bytes.Equal(e.Key, l.head.entry.Key) {
+			return l.head.entry.Value, true
+		}
+	}
+	return z(Value)(), false
+}
+
+// inserted creates a new L-node with the added entry.
+func (l *lNode(Value)) inserted(entry *Entry(Value)) *lNode(Value) {
+	return &lNode(Value){
+		head: &sNode(Value){entry},
+		tail: l.removed(entry),
+	}
+}
+
+// removed creates a new L-node with the entry removed.
+func (l *lNode(Value)) removed(e *Entry(Value)) *lNode(Value) {
+	for l1 := l; l1 != nil; l1 = l1.tail {
+		if bytes.Equal(e.Key, l1.head.entry.Key) {
+			return l.remove(l1)
+		}
+	}
+	return l
+}
+
+func (l *lNode(Value)) remove(l1 *lNode(Value)) *lNode(Value) {
+	if l == l1 {
+		return l.tail
+	}
+	return &lNode(Value){
+		head: l.head,
+		tail: l.tail.remove(l1),
+	}
+}
+
+// branch is either *iNode or *sNode.
+type branch interface{}
+
+// Entry contains a Ctrie key-value pair.
+type Entry(type Value) struct {
+	Key   []byte
+	Value Value
+	hash  uint32
+}
+
+// sNode is a singleton node which contains a single key and value.
+type sNode(type Value) struct {
+	entry *Entry(Value)
+}
 // toContracted ensures that every I-node except the root points to a C-node
 // with at least one branch. If a given C-Node has only a single S-node below
 // it and is not at the root level, a T-node which wraps the S-node is
