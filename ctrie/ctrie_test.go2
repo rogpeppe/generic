@@ -26,7 +26,7 @@ import (
 )
 
 func TestCtrie(t *testing.T) {
-	ctrie := New(nil)
+	ctrie := New(string)(nil)
 
 	_, ok := ctrie.Lookup([]byte("foo"))
 	assertFalse(t, ok)
@@ -90,7 +90,7 @@ func mockHashFactory() hash.Hash32 {
 }
 
 func TestInsertLNode(t *testing.T) {
-	ctrie := New(mockHashFactory)
+	ctrie := New(int)(mockHashFactory)
 
 	for i := 0; i < 10; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
@@ -99,7 +99,7 @@ func TestInsertLNode(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
-		assertEqual(t, i, val.(int))
+		assertEqual(t, i, val)
 	}
 	_, ok := ctrie.Lookup([]byte("11"))
 	assertFalse(t, ok)
@@ -107,12 +107,12 @@ func TestInsertLNode(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		val, ok := ctrie.Remove([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
-		assertEqual(t, i, val.(int))
+		assertEqual(t, i, val)
 	}
 }
 
 func TestInsertTNode(t *testing.T) {
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 
 	for i := 0; i < 10000; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
@@ -129,12 +129,12 @@ func TestInsertTNode(t *testing.T) {
 	for i := 0; i < 10000; i++ {
 		val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
-		assertEqual(t, i, val.(int))
+		assertEqual(t, i, val)
 	}
 }
 
 func TestConcurrency(t *testing.T) {
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -149,7 +149,7 @@ func TestConcurrency(t *testing.T) {
 		for i := 0; i < 10000; i++ {
 			val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
 			if ok {
-				assertEqual(t, i, val.(int))
+				assertEqual(t, i, val)
 			}
 		}
 		wg.Done()
@@ -164,7 +164,7 @@ func TestConcurrency(t *testing.T) {
 }
 
 func TestConcurrency2(t *testing.T) {
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	var wg sync.WaitGroup
 	wg.Add(4)
 
@@ -179,7 +179,7 @@ func TestConcurrency2(t *testing.T) {
 		for i := 0; i < 10000; i++ {
 			val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
 			if ok {
-				assertEqual(t, i, val.(int))
+				assertEqual(t, i, val)
 			}
 		}
 		wg.Done()
@@ -200,11 +200,11 @@ func TestConcurrency2(t *testing.T) {
 	}()
 
 	wg.Wait()
-	assertEqual(t, uint(10000), ctrie.Size())
+	assertEqual(t, 10000, ctrie.Size())
 }
 
 func TestSnapshot(t *testing.T) {
-	ctrie := New(nil)
+	ctrie := New(interface{})(nil)
 	for i := 0; i < 100; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
@@ -215,7 +215,7 @@ func TestSnapshot(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		val, ok := snapshot.Lookup([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
-		assertEqual(t, i, val.(int))
+		assertEqual(t, interface{}(i), val)
 	}
 
 	// Now remove the values from the original.
@@ -227,11 +227,11 @@ func TestSnapshot(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		val, ok := snapshot.Lookup([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
-		assertEqual(t, i, val.(int))
+		assertEqual(t, interface{}(i), val)
 	}
 
 	// New Ctrie and snapshot.
-	ctrie = New(nil)
+	ctrie = New(interface{})(nil)
 	for i := 0; i < 100; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
@@ -255,7 +255,7 @@ func TestSnapshot(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		val, ok := ctrie.Lookup([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
-		assertEqual(t, i, val.(int))
+		assertEqual(t, interface{}(i), val)
 	}
 	_, ok = ctrie.Lookup([]byte("bat"))
 	assertFalse(t, ok)
@@ -279,7 +279,7 @@ func TestSnapshot(t *testing.T) {
 }
 
 func TestReadOnlySnapshot(t *testing.T) {
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	for i := 0; i < 100; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
@@ -290,7 +290,7 @@ func TestReadOnlySnapshot(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		val, ok := snapshot.Lookup([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
-		assertEqual(t, i, val.(int))
+		assertEqual(t, i, val)
 	}
 
 	for i := 0; i < 50; i++ {
@@ -301,7 +301,7 @@ func TestReadOnlySnapshot(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		val, ok := snapshot.Lookup([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
-		assertEqual(t, i, val.(int))
+		assertEqual(t, i, val)
 	}
 
 	// Ensure read-only snapshots panic on writes.
@@ -320,7 +320,7 @@ func TestReadOnlySnapshot(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		val, ok := snapshot2.Lookup([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
-		assertEqual(t, i, val.(int))
+		assertEqual(t, i, val)
 	}
 
 	// Ensure snapshots of read-only snapshots panic on writes.
@@ -333,7 +333,7 @@ func TestReadOnlySnapshot(t *testing.T) {
 }
 
 func TestIterator(t *testing.T) {
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	for i := 0; i < 10; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
@@ -354,7 +354,7 @@ func TestIterator(t *testing.T) {
 	for entry := range ctrie.Iterator(nil) {
 		exp, ok := expected[string(entry.Key)]
 		if assertTrue(t, ok) {
-			assertEqual(t, exp, entry.Value.(int))
+			assertEqual(t, exp, entry.Value)
 		}
 		count++
 	}
@@ -366,7 +366,7 @@ func TestIterator(t *testing.T) {
 	entry := <-iter
 	exp, ok := expected[string(entry.Key)]
 	if assertTrue(t, ok) {
-		assertEqual(t, exp, entry.Value.(int))
+		assertEqual(t, exp, entry.Value)
 	}
 	close(cancel)
 	// Drain anything already put on the channel. Since select chooses a
@@ -380,7 +380,7 @@ func TestIterator(t *testing.T) {
 
 // TestIteratorCoversTNodes reproduces the scenario of a bug where tNodes weren't being traversed.
 func TestIteratorCoversTNodes(t *testing.T) {
-	ctrie := New(mockHashFactory)
+	ctrie := New(bool)(mockHashFactory)
 	// Add a pair of keys that collide (because we're using the mock hash).
 	ctrie.Insert([]byte("a"), true)
 	ctrie.Insert([]byte("b"), true)
@@ -400,25 +400,25 @@ func TestIteratorCoversTNodes(t *testing.T) {
 }
 
 func TestSize(t *testing.T) {
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	for i := 0; i < 10; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
-	assertEqual(t, uint(10), ctrie.Size())
+	assertEqual(t, 10, ctrie.Size())
 }
 
 func TestClear(t *testing.T) {
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	for i := 0; i < 10; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
-	assertEqual(t, uint(10), ctrie.Size())
+	assertEqual(t, 10, ctrie.Size())
 	snapshot := ctrie.Snapshot()
 
 	ctrie.Clear()
 
-	assertEqual(t, uint(0), ctrie.Size())
-	assertEqual(t, uint(10), snapshot.Size())
+	assertEqual(t, 0, ctrie.Size())
+	assertEqual(t, 10, snapshot.Size())
 }
 
 type fakehash struct{}
@@ -452,7 +452,7 @@ func factory() hash.Hash32 {
 }
 
 func TestHashCollision(t *testing.T) {
-	trie := New(factory)
+	trie := New(int)(factory)
 	trie.Insert([]byte("foobar"), 1)
 	trie.Insert([]byte("zogzog"), 2)
 	trie.Insert([]byte("foobar"), 3)
@@ -467,7 +467,7 @@ func TestHashCollision(t *testing.T) {
 }
 
 func BenchmarkInsert(b *testing.B) {
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ctrie.Insert([]byte("foo"), 0)
@@ -476,7 +476,7 @@ func BenchmarkInsert(b *testing.B) {
 
 func BenchmarkLookup(b *testing.B) {
 	numItems := 1000
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
@@ -490,7 +490,7 @@ func BenchmarkLookup(b *testing.B) {
 
 func BenchmarkRemove(b *testing.B) {
 	numItems := 1000
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
@@ -504,7 +504,7 @@ func BenchmarkRemove(b *testing.B) {
 
 func BenchmarkSnapshot(b *testing.B) {
 	numItems := 1000
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
@@ -517,7 +517,7 @@ func BenchmarkSnapshot(b *testing.B) {
 
 func BenchmarkReadOnlySnapshot(b *testing.B) {
 	numItems := 1000
-	ctrie := New(nil)
+	ctrie := New(int)(nil)
 	for i := 0; i < numItems; i++ {
 		ctrie.Insert([]byte(strconv.Itoa(i)), i)
 	}
