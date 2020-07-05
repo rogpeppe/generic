@@ -250,7 +250,7 @@ func (l *lNode(Value)) remove(l1 *lNode(Value)) *lNode(Value) {
 	}
 }
 
-// branch is either an iNode or sNode.
+// branch is either *iNode or *sNode.
 type branch interface{}
 
 // Entry contains a Ctrie key-value pair.
@@ -355,20 +355,6 @@ func (c *Ctrie(Value)) Clear() {
 	}
 }
 
-// Iterator returns a channel which yields the Entries of the Ctrie. If a
-// cancel channel is provided, closing it will terminate and close the iterator
-// channel. Note that if a cancel channel is not used and not every entry is
-// read from the iterator, a goroutine will leak.
-func (c *Ctrie(Value)) Iterator(cancel <-chan struct{}) <-chan *Entry(Value) {
-	ch := make(chan (*Entry(Value)))
-	snapshot := c.ReadOnlySnapshot()
-	go func() {
-		snapshot.traverse(snapshot.readRoot(), ch, cancel)
-		close(ch)
-	}()
-	return ch
-}
-
 // Size returns the number of keys in the Ctrie.
 func (c *Ctrie(Value)) Size() uint {
 	// TODO: The size operation can be optimized further by caching the size
@@ -385,40 +371,111 @@ func (c *Ctrie(Value)) Size() uint {
 
 var errCanceled = errors.New("canceled")
 
-func (c *Ctrie(Value)) traverse(i *iNode(Value), ch chan<- *Entry(Value), cancel <-chan struct{}) error {
-	main := gcasRead(i, c)
-	switch {
-	case main.cNode != nil:
-		for _, br := range main.cNode.array {
-			switch b := br.(type) {
-			case *iNode(Value):
-				if err := c.traverse(b, ch, cancel); err != nil {
-					return err
-				}
-			case *sNode(Value):
-				select {
-				case ch <- b.entry:
-				case <-cancel:
-					return errCanceled
-				}
-			}
-		}
-	case main.lNode != nil:
-		for l := main.lNode; l != nil; l = l.tail {
-			select {
-			case ch <- l.head.entry:
-			case <-cancel:
-				return errCanceled
-			}
-		}
-	case main.tNode != nil:
-		select {
-		case ch <- main.tNode.sNode.entry:
-		case <-cancel:
-			return errCanceled
+// Iterator returns an iterator over the entries of the Ctrie.
+func (c *Ctrie(Value)) Iterator() *Iter(Value) {
+	iter := &Iter(Value){
+		c: c,
+	}
+	iter.push(iter.mainIter).iNode = c.ReadOnlySnapshot().readRoot()
+	return iter
+}
+
+type Iter(type Value) struct {
+	c *Ctrie(Value)
+	stack []*iNode(Value)
+	list *lNode(Value)
+	curr *Entry(Value)
+}
+
+type iterFrame(type Value) struct {
+	iter iterFunc(Value)
+	iNode *iNode(Value)
+	array []branch
+	lNode *lNode(Value)
+}
+
+type iterFunc(type Value) = func(*Iter(Value), *iterFrame(Value)) bool
+
+func (i *Iter(Value)) Next() bool {
+	i.curr = nil
+	for i.curr == nil && len(i.stack) > 0 {
+		if f := &i.stack[len(i.stack)-1]; !f.iter(i, f) {
+			i.pop()
 		}
 	}
-	return nil
+	return i.curr != nil
+}
+
+func  (i *Iter(Value)) Value() Value {
+	if i.curr == nil {
+		return z(Value)()
+	}
+	return i.curr.Value
+}
+
+func (i *Iter(Value)) Key() []byte {
+	if i.curr == nil {
+		return nil
+	}
+	return i.curr.Key
+}
+
+func (i *Iter(Value)) mainIter(f *iterFrame) bool {
+	if f.iNode == nil {
+		return false
+	}
+	main := gcasRead(f.iNode, i.c)
+	f.iNode = nil
+	switch {
+	case main.cNode != nil:
+		i.push((*Iter).arrayIter).array = main.cNode.array
+		return true
+	case main.lNode != nil:
+		i.push((*Iter).listIter).lNode = main.lNode
+		return true
+	case main.tNode != nil:
+		i.curr = main.tNode.sNode.entry
+		return true
+	}
+	panic("unreachable")
+}
+
+func (i *Iter(Value)) arrayIter(f *iterFrame) bool {
+	a := f.array
+	if len(a) == 0 {
+		return false
+	}
+	f.array = a[1:]
+	switch b := a[0].(type) {
+	case *iNode(Value):
+		i.push((*Iter).mainIter).iNode = b
+		return true
+	case *sNode(Value):
+		i.curr = b.entry
+		return true
+	}
+	panic("unreachable")
+}
+
+func (i *Iter(Value)) listIter(f *iterFrame) bool {
+	l := f.lNode
+	if l == nil {
+		return false
+	}
+	f.lNode = f.lNode.tail
+	i.curr = l.head.entry
+	return true
+}
+
+func (i *Iter(Value)) pop() {
+	i.stack = i.stack[0:len(i.stack)-1]
+}
+
+func (i *Iter(Value)) push(f iterFunc(Value)) *iterFrame {
+	i.stack = append(i.stack, iterFrame(Value){})
+	elem := &i.stack[len(i.stack)-1]
+	elem.iter = f
+	return elem
 }
 
 func (c *Ctrie(Value)) assertReadWrite() {
