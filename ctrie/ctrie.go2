@@ -363,7 +363,7 @@ func (c *Ctrie(Value)) Size() uint {
 	// computation is amortized across the update operations that occurred
 	// since the last snapshot.
 	size := uint(0)
-	for _ = range c.Iterator(nil) {
+	for iter := c.Iterator(); iter.Next(); {
 		size++
 	}
 	return size
@@ -376,25 +376,25 @@ func (c *Ctrie(Value)) Iterator() *Iter(Value) {
 	iter := &Iter(Value){
 		c: c,
 	}
-	iter.push(iter.mainIter).iNode = c.ReadOnlySnapshot().readRoot()
+	iter.push((*Iter(Value)).mainIter).iNode = c.ReadOnlySnapshot().readRoot()
 	return iter
 }
 
 type Iter(type Value) struct {
 	c *Ctrie(Value)
-	stack []*iNode(Value)
-	list *lNode(Value)
+	stack []iterFrame(Value)
 	curr *Entry(Value)
 }
 
 type iterFrame(type Value) struct {
-	iter iterFunc(Value)
+	iter func(*Iter(Value), *iterFrame(Value)) bool
 	iNode *iNode(Value)
 	array []branch
 	lNode *lNode(Value)
 }
 
-type iterFunc(type Value) = func(*Iter(Value), *iterFrame(Value)) bool
+// TODO We'd like to define this as a type, but https://github.com/golang/go/issues/40060
+// type iterFunc(type Value) func(*Iter(Value), *iterFrame(Value)) bool
 
 func (i *Iter(Value)) Next() bool {
 	i.curr = nil
@@ -420,7 +420,7 @@ func (i *Iter(Value)) Key() []byte {
 	return i.curr.Key
 }
 
-func (i *Iter(Value)) mainIter(f *iterFrame) bool {
+func (i *Iter(Value)) mainIter(f *iterFrame(Value)) bool {
 	if f.iNode == nil {
 		return false
 	}
@@ -428,10 +428,10 @@ func (i *Iter(Value)) mainIter(f *iterFrame) bool {
 	f.iNode = nil
 	switch {
 	case main.cNode != nil:
-		i.push((*Iter).arrayIter).array = main.cNode.array
+		i.push((*Iter(Value)).arrayIter).array = main.cNode.array
 		return true
 	case main.lNode != nil:
-		i.push((*Iter).listIter).lNode = main.lNode
+		i.push((*Iter(Value)).listIter).lNode = main.lNode
 		return true
 	case main.tNode != nil:
 		i.curr = main.tNode.sNode.entry
@@ -440,7 +440,7 @@ func (i *Iter(Value)) mainIter(f *iterFrame) bool {
 	panic("unreachable")
 }
 
-func (i *Iter(Value)) arrayIter(f *iterFrame) bool {
+func (i *Iter(Value)) arrayIter(f *iterFrame(Value)) bool {
 	a := f.array
 	if len(a) == 0 {
 		return false
@@ -448,7 +448,7 @@ func (i *Iter(Value)) arrayIter(f *iterFrame) bool {
 	f.array = a[1:]
 	switch b := a[0].(type) {
 	case *iNode(Value):
-		i.push((*Iter).mainIter).iNode = b
+		i.push((*Iter(Value)).mainIter).iNode = b
 		return true
 	case *sNode(Value):
 		i.curr = b.entry
@@ -457,7 +457,7 @@ func (i *Iter(Value)) arrayIter(f *iterFrame) bool {
 	panic("unreachable")
 }
 
-func (i *Iter(Value)) listIter(f *iterFrame) bool {
+func (i *Iter(Value)) listIter(f *iterFrame(Value)) bool {
 	l := f.lNode
 	if l == nil {
 		return false
@@ -471,7 +471,7 @@ func (i *Iter(Value)) pop() {
 	i.stack = i.stack[0:len(i.stack)-1]
 }
 
-func (i *Iter(Value)) push(f iterFunc(Value)) *iterFrame {
+func (i *Iter(Value)) push(f func(*Iter(Value), *iterFrame(Value)) bool) *iterFrame(Value) {
 	i.stack = append(i.stack, iterFrame(Value){})
 	elem := &i.stack[len(i.stack)-1]
 	elem.iter = f

@@ -351,31 +351,14 @@ func TestIterator(t *testing.T) {
 	}
 
 	count := 0
-	for entry := range ctrie.Iterator(nil) {
-		exp, ok := expected[string(entry.Key)]
+	for iter := ctrie.Iterator(); iter.Next(); {
+		exp, ok := expected[string(iter.Key())]
 		if assertTrue(t, ok) {
-			assertEqual(t, exp, entry.Value)
+			assertEqual(t, exp, iter.Value())
 		}
 		count++
 	}
 	assertEqual(t, len(expected), count)
-
-	// Closing cancel channel should close iterator channel.
-	cancel := make(chan struct{})
-	iter := ctrie.Iterator(cancel)
-	entry := <-iter
-	exp, ok := expected[string(entry.Key)]
-	if assertTrue(t, ok) {
-		assertEqual(t, exp, entry.Value)
-	}
-	close(cancel)
-	// Drain anything already put on the channel. Since select chooses a
-	// pseudo-random case, we must attempt to drain for every item.
-	for _ = range expected {
-		<-iter
-	}
-	_, ok = <-iter
-	assertFalse(t, ok)
 }
 
 // TestIteratorCoversTNodes reproduces the scenario of a bug where tNodes weren't being traversed.
@@ -388,8 +371,8 @@ func TestIteratorCoversTNodes(t *testing.T) {
 	// trigger creation of a tNode.
 	ctrie.Remove([]byte("b"))
 	seenKeys := map[string]bool{}
-	for entry := range ctrie.Iterator(nil) {
-		seenKeys[string(entry.Key)] = true
+	for iter := ctrie.Iterator(); iter.Next(); {
+		seenKeys[string(iter.Key())] = true
 	}
 	if !seenKeys["a"] {
 		t.Errorf("Iterator did not return 'a'.")
