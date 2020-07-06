@@ -39,25 +39,23 @@ const (
 
 var seed = maphash.MakeSeed()
 
-func StringHash(key string) uint32 {
+func StringHash(key string) uint64 {
 	var h maphash.Hash
 	h.SetSeed(seed)
 	h.WriteString(key)
-	// TODO use 64 bit hashes.
-	return uint32(h.Sum64())
+	return h.Sum64()
 }
 
-func BytesHash(key []byte) uint32 {
+func BytesHash(key []byte) uint64 {
 	var h maphash.Hash
 	h.SetSeed(seed)
 	h.Write(key)
-	// TODO use 64 bit hashes.
-	return uint32(h.Sum64())
+	return h.Sum64()
 }
 
 type String string
 
-func (s String) Hash() uint32 {
+func (s String) Hash() uint64 {
 	return StringHash(string(s))
 }
 
@@ -66,7 +64,7 @@ func (s String) Hash() uint32 {
 type Ctrie(type Key, Value) struct {
 	root        *iNode(Key, Value)
 	readOnly    bool
-	hashFunc func(Key) uint32
+	hashFunc func(Key) uint64
 	eqFunc func(Key, Key) bool
 }
 
@@ -78,7 +76,7 @@ type generation struct{ _ bool }
 
 type Hasher interface {
 	comparable
-	Hash() uint32
+	Hash() uint64
 }
 
 // New returns a new empty Ctrie.
@@ -92,7 +90,7 @@ func New(type Key Hasher, Value interface{})() *Ctrie(Key, Value) {
 // and hashing instead of relying on comparison and hashing on the value itself.
 func NewWithFuncs(type Key, Value)(
 	eqFunc func(k1, k2 Key) bool,
-	hashFunc func(Key) uint32,
+	hashFunc func(Key) uint64,
 ) *Ctrie(Key, Value) {
 	root := &iNode(Key, Value){
 		main: &mainNode(Key, Value){
@@ -105,7 +103,7 @@ func NewWithFuncs(type Key, Value)(
 func newCtrie(type Key, Value)(
 	root *iNode(Key, Value),
 	eqFunc func(Key, Key) bool,
-	hashFunc func(Key) uint32,
+	hashFunc func(Key) uint64,
 	readOnly bool,
 ) *Ctrie(Key, Value) {
 	return &Ctrie(Key, Value){
@@ -123,7 +121,7 @@ func (c *Ctrie(Key, Value)) Set(key Key, value Value) {
 	c.insert(&Entry(Key, Value){
 		Key:   key,
 		Value: value,
-		hash:  c.hashFunc(key),
+		hash:  uint32(c.hashFunc(key)),
 	})
 }
 
@@ -132,7 +130,7 @@ func (c *Ctrie(Key, Value)) Set(key Key, value Value) {
 func (c *Ctrie(Key, Value)) Get(key Key) (Value, bool) {
 	return c.lookup(&Entry(Key, Value){
 		Key: key,
-		hash: c.hashFunc(key),
+		hash: uint32(c.hashFunc(key)),
 	})
 }
 
@@ -142,7 +140,7 @@ func (c *Ctrie(Key, Value)) Remove(key Key) (Value, bool) {
 	c.assertReadWrite()
 	return c.remove(&Entry(Key, Value){
 		Key: key,
-		hash: c.hashFunc(key),
+		hash: uint32(c.hashFunc(key)),
 	})
 }
 
