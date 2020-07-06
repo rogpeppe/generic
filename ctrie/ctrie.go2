@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-Package ctrie provides an implementation of the Ctrie data structure, which is
+Package ctrie provides an implementation of the Map data structure, which is
 a concurrent, lock-free hash trie. This data structure was originally presented
 in the paper Concurrent Tries with Efficient Non-Blocking Clones:
 
@@ -24,7 +24,6 @@ https://axel22.github.io/resources/docs/ctries-clone.pdf
 package ctrie
 
 import (
-	"errors"
 	"hash/maphash"
 	"github.com/rogpeppe/generic/gatomic"
 )
@@ -59,16 +58,16 @@ func (s String) Hash() uint64 {
 	return StringHash(string(s))
 }
 
-// Ctrie is a concurrent, lock-free hash trie. By default, keys are hashed
-// using FNV-1a unless a HashFactory is provided to New.
-type Ctrie(type Key, Value) struct {
+// Map implements a map that can be updated concurrently
+// and also has a low cost snapshot operation.
+type Map(type Key, Value) struct {
 	root        *iNode(Key, Value)
 	readOnly    bool
 	hashFunc func(Key) uint64
 	eqFunc func(Key, Key) bool
 }
 
-// generation demarcates Ctrie clones. We use a heap-allocated reference
+// generation demarcates Map clones. We use a heap-allocated reference
 // instead of an integer to avoid integer overflows. Struct must have a field
 // on it since two distinct zero-size variables may have the same address in
 // memory.
@@ -79,8 +78,8 @@ type Hasher interface {
 	Hash() uint64
 }
 
-// New returns a new empty Ctrie.
-func New(type Key Hasher, Value interface{})() *Ctrie(Key, Value) {
+// New returns a new empty Map.
+func New(type Key Hasher, Value interface{})() *Map(Key, Value) {
 	return NewWithFuncs(Key, Value)(func(k1, k2 Key) bool {
 		return k1 == k2
 	}, Key.Hash)
@@ -91,22 +90,22 @@ func New(type Key Hasher, Value interface{})() *Ctrie(Key, Value) {
 func NewWithFuncs(type Key, Value)(
 	eqFunc func(k1, k2 Key) bool,
 	hashFunc func(Key) uint64,
-) *Ctrie(Key, Value) {
+) *Map(Key, Value) {
 	root := &iNode(Key, Value){
 		main: &mainNode(Key, Value){
 			cNode: &cNode(Key, Value){},
 		},
 	}
-	return newCtrie(Key, Value)(root, eqFunc, hashFunc, false)
+	return newMap(Key, Value)(root, eqFunc, hashFunc, false)
 }
 
-func newCtrie(type Key, Value)(
+func newMap(type Key, Value)(
 	root *iNode(Key, Value),
 	eqFunc func(Key, Key) bool,
 	hashFunc func(Key) uint64,
 	readOnly bool,
-) *Ctrie(Key, Value) {
-	return &Ctrie(Key, Value){
+) *Map(Key, Value) {
+	return &Map(Key, Value){
 		root:        root,
 		eqFunc: eqFunc,
 		hashFunc: hashFunc,
@@ -116,7 +115,7 @@ func newCtrie(type Key, Value)(
 
 // Set sets the value for the given key, replacing the existing value if
 // the key already exists.
-func (c *Ctrie(Key, Value)) Set(key Key, value Value) {
+func (c *Map(Key, Value)) Set(key Key, value Value) {
 	c.assertReadWrite()
 	c.insert(&Entry(Key, Value){
 		Key:   key,
@@ -127,16 +126,16 @@ func (c *Ctrie(Key, Value)) Set(key Key, value Value) {
 
 // Get returns the value for the associated key and
 // reports whether the key exists in the trie.
-func (c *Ctrie(Key, Value)) Get(key Key) (Value, bool) {
+func (c *Map(Key, Value)) Get(key Key) (Value, bool) {
 	return c.lookup(&Entry(Key, Value){
 		Key: key,
 		hash: uint32(c.hashFunc(key)),
 	})
 }
 
-// Delete deletes the value for the associated key, returning true if it was
-// removed or false and the zero value if the entry doesn't exist.
-func (c *Ctrie(Key, Value)) Delete(key Key) (Value, bool) {
+// Delete deletes the value for the associated key, returning
+// the deleted value and returning true if an entry was removed.
+func (c *Map(Key, Value)) Delete(key Key) (Value, bool) {
 	c.assertReadWrite()
 	return c.remove(&Entry(Key, Value){
 		Key: key,
@@ -144,20 +143,20 @@ func (c *Ctrie(Key, Value)) Delete(key Key) (Value, bool) {
 	})
 }
 
-// Clone returns a stable, point-in-time clone of the Ctrie. If the Ctrie
-// is read-only, the returned Ctrie will also be read-only.
-func (c *Ctrie(Key, Value)) Clone() *Ctrie(Key, Value) {
+// Clone returns a stable, point-in-time clone of the Map. If the Map
+// is read-only, the returned Map will also be read-only.
+func (c *Map(Key, Value)) Clone() *Map(Key, Value) {
 	return c.clone(c.readOnly)
 }
 
-// RClone returns a stable, point-in-time clone of the Ctrie which
+// RClone returns a stable, point-in-time clone of the Map which
 // is read-only. Write operations on a read-only clone will panic.
-func (c *Ctrie(Key, Value)) RClone() *Ctrie(Key, Value) {
+func (c *Map(Key, Value)) RClone() *Map(Key, Value) {
 	return c.clone(true)
 }
 
 // clone wraps up the CAS logic to make a clone or a read-only clone.
-func (c *Ctrie(Key, Value)) clone(readOnly bool) *Ctrie(Key, Value) {
+func (c *Map(Key, Value)) clone(readOnly bool) *Map(Key, Value) {
 	if readOnly && c.readOnly {
 		return c
 	}
@@ -167,16 +166,17 @@ func (c *Ctrie(Key, Value)) clone(readOnly bool) *Ctrie(Key, Value) {
 		if c.rdcssRoot(root, main, root.copyToGen(&generation{}, c)) {
 			if readOnly {
 				// For a read-only clone, we can share the old generation root.
-				return newCtrie(root, c.eqFunc, c.hashFunc, readOnly)
+				return newMap(root, c.eqFunc, c.hashFunc, readOnly)
 			}
 			// For a read-write clone, we need to take a copy of the root n the new generation.
-			return newCtrie(c.readRoot().copyToGen(&generation{}, c), c.eqFunc, c.hashFunc, readOnly)
+			return newMap(c.readRoot().copyToGen(&generation{}, c), c.eqFunc, c.hashFunc, readOnly)
 		}
 	}
 }
 
-// Clear removes all keys from the Ctrie.
-func (c *Ctrie(Key, Value)) Clear() {
+// Clear removes all keys from the Map.
+func (c *Map(Key, Value)) Clear() {
+	c.assertReadWrite()
 	for {
 		root := c.readRoot()
 		gen := &generation{}
@@ -190,10 +190,11 @@ func (c *Ctrie(Key, Value)) Clear() {
 	}
 }
 
-// Len returns the number of keys in the Ctrie.
-func (c *Ctrie(Key, Value)) Len() int {
+// Len returns the number of keys in the Map.
+// This operation is O(n).
+func (c *Map(Key, Value)) Len() int {
 	// TODO: The size operation can be optimized further by caching the size
-	// information in main nodes of a read-only Ctrie – this reduces the
+	// information in main nodes of a read-only Map – this reduces the
 	// amortized complexity of the size operation to O(1) because the size
 	// computation is amortized across the update operations that occurred
 	// since the last clone.
@@ -204,10 +205,8 @@ func (c *Ctrie(Key, Value)) Len() int {
 	return size
 }
 
-var errCanceled = errors.New("canceled")
-
-// Iterator returns an iterator over the entries of the Ctrie.
-func (c *Ctrie(Key, Value)) Iterator() *Iter(Key, Value) {
+// Iterator returns an iterator over the entries of the Map.
+func (c *Map(Key, Value)) Iterator() *Iter(Key, Value) {
 	iter := &Iter(Key, Value){
 		c: c,
 	}
@@ -215,9 +214,9 @@ func (c *Ctrie(Key, Value)) Iterator() *Iter(Key, Value) {
 	return iter
 }
 
-// Iter represents an iterator through all items in the trie.
+// Iter is an iterator that iterates through entries in the map.
 type Iter(type Key, Value) struct {
-	c *Ctrie(Key, Value)
+	c *Map(Key, Value)
 	// stack simulates the recursion stack that we'd have
 	// if we were doing a conventional recursive iteration
 	// through the data structure.
@@ -228,7 +227,7 @@ type Iter(type Key, Value) struct {
 type iterFrame(type Key, Value) struct {
 	iter func(*Iter(Key, Value), *iterFrame(Key, Value)) bool
 	iNode *iNode(Key, Value)
-	array []branch
+	slice []branch
 	lNode *lNode(Key, Value)
 }
 
@@ -259,6 +258,7 @@ func (i *Iter(Key, Value)) Key() Key {
 	return i.curr.Key
 }
 
+// mainIter iterates past a single iNode in the map.
 func (i *Iter(Key, Value)) mainIter(f *iterFrame(Key, Value)) bool {
 	if f.iNode == nil {
 		return false
@@ -267,7 +267,7 @@ func (i *Iter(Key, Value)) mainIter(f *iterFrame(Key, Value)) bool {
 	f.iNode = nil
 	switch {
 	case main.cNode != nil:
-		i.push((*Iter(Key, Value)).arrayIter).array = main.cNode.array
+		i.push((*Iter(Key, Value)).sliceIter).slice = main.cNode.slice
 		return true
 	case main.lNode != nil:
 		i.push((*Iter(Key, Value)).listIter).lNode = main.lNode
@@ -279,12 +279,13 @@ func (i *Iter(Key, Value)) mainIter(f *iterFrame(Key, Value)) bool {
 	panic("unreachable")
 }
 
-func (i *Iter(Key, Value)) arrayIter(f *iterFrame(Key, Value)) bool {
-	a := f.array
+// sliceIter iterates through the entries in a cNode.
+func (i *Iter(Key, Value)) sliceIter(f *iterFrame(Key, Value)) bool {
+	a := f.slice
 	if len(a) == 0 {
 		return false
 	}
-	f.array = a[1:]
+	f.slice = a[1:]
 	switch b := a[0].(type) {
 	case *iNode(Key, Value):
 		i.push((*Iter(Key, Value)).mainIter).iNode = b
@@ -296,6 +297,7 @@ func (i *Iter(Key, Value)) arrayIter(f *iterFrame(Key, Value)) bool {
 	panic("unreachable")
 }
 
+// listIter iterates through the list of entries in an lNode.
 func (i *Iter(Key, Value)) listIter(f *iterFrame(Key, Value)) bool {
 	l := f.lNode
 	if l == nil {
@@ -306,10 +308,15 @@ func (i *Iter(Key, Value)) listIter(f *iterFrame(Key, Value)) bool {
 	return true
 }
 
+// pop pops a value off the iterator stack.
 func (i *Iter(Key, Value)) pop() {
 	i.stack = i.stack[0:len(i.stack)-1]
 }
 
+// push pushes the given iteration function onto the iterator stack
+// and returns the new frame.
+// The caller is responsible for setting up the frame appropriately
+// for the iteration function.
 func (i *Iter(Key, Value)) push(f func(*Iter(Key, Value), *iterFrame(Key, Value)) bool) *iterFrame(Key, Value) {
 	i.stack = append(i.stack, iterFrame(Key, Value){})
 	elem := &i.stack[len(i.stack)-1]
@@ -317,20 +324,20 @@ func (i *Iter(Key, Value)) push(f func(*Iter(Key, Value), *iterFrame(Key, Value)
 	return elem
 }
 
-func (c *Ctrie(Key, Value)) assertReadWrite() {
+func (c *Map(Key, Value)) assertReadWrite() {
 	if c.readOnly {
 		panic("Cannot modify read-only clone")
 	}
 }
 
-func (c *Ctrie(Key, Value)) insert(entry *Entry(Key, Value)) {
+func (c *Map(Key, Value)) insert(entry *Entry(Key, Value)) {
 	root := c.readRoot()
 	if !c.iinsert(root, entry, 0, nil, root.gen) {
 		c.insert(entry)
 	}
 }
 
-func (c *Ctrie(Key, Value)) lookup(entry *Entry(Key, Value)) (Value, bool) {
+func (c *Map(Key, Value)) lookup(entry *Entry(Key, Value)) (Value, bool) {
 	root := c.readRoot()
 	result, exists, ok := c.ilookup(root, entry, 0, nil, root.gen)
 	for !ok {
@@ -339,7 +346,7 @@ func (c *Ctrie(Key, Value)) lookup(entry *Entry(Key, Value)) (Value, bool) {
 	return result, exists
 }
 
-func (c *Ctrie(Key, Value)) remove(entry *Entry(Key, Value)) (Value, bool) {
+func (c *Map(Key, Value)) remove(entry *Entry(Key, Value)) (Value, bool) {
 	root := c.readRoot()
 	result, exists, ok := c.iremove(root, entry, 0, nil, root.gen)
 	for !ok {
@@ -348,9 +355,9 @@ func (c *Ctrie(Key, Value)) remove(entry *Entry(Key, Value)) (Value, bool) {
 	return result, exists
 }
 
-// iinsert attempts to insert the entry into the Ctrie. If false is returned,
+// iinsert attempts to insert the entry into the Map. If false is returned,
 // the operation should be retried.
-func (c *Ctrie(Key, Value)) iinsert(i *iNode(Key, Value), entry *Entry(Key, Value), lev uint, parent *iNode(Key, Value), startGen *generation) bool {
+func (c *Map(Key, Value)) iinsert(i *iNode(Key, Value), entry *Entry(Key, Value), lev uint, parent *iNode(Key, Value), startGen *generation) bool {
 	// Linearization point.
 	main := gcasRead(i, c)
 	switch {
@@ -371,8 +378,8 @@ func (c *Ctrie(Key, Value)) iinsert(i *iNode(Key, Value), entry *Entry(Key, Valu
 			return gcas(i, main, ncn, c)
 		}
 		// If the relevant bit is present in the bitmap, then its corresponding
-		// branch is read from the array.
-		branch := cn.array[pos]
+		// branch is read from the slice.
+		branch := cn.slice[pos]
 		switch branch := branch.(type) {
 		case *iNode(Key, Value):
 			// If the branch is an I-node, then iinsert is called recursively.
@@ -387,7 +394,7 @@ func (c *Ctrie(Key, Value)) iinsert(i *iNode(Key, Value), entry *Entry(Key, Valu
 			sn := branch
 			if !c.eqFunc(sn.entry.Key, entry.Key) {
 				// If the branch is an S-node and its key is not equal to the
-				// key being inserted, then the Ctrie has to be extended with
+				// key being inserted, then the Map has to be extended with
 				// an additional level. The C-node is replaced with its updated
 				// version, created using the updated function that adds a new
 				// I-node at the respective position. The new Inode has its
@@ -408,7 +415,7 @@ func (c *Ctrie(Key, Value)) iinsert(i *iNode(Key, Value), entry *Entry(Key, Valu
 			ncn := &mainNode(Key, Value){cNode: cn.updated(pos, &sNode(Key, Value){entry}, i.gen)}
 			return gcas(i, main, ncn, c)
 		default:
-			panic("Ctrie is in an invalid state")
+			panic("Map is in an invalid state")
 		}
 	case main.tNode != nil:
 		clean(parent, lev-w, c)
@@ -417,15 +424,15 @@ func (c *Ctrie(Key, Value)) iinsert(i *iNode(Key, Value), entry *Entry(Key, Valu
 		nln := &mainNode(Key, Value){lNode: main.lNode.inserted(entry, c.eqFunc)}
 		return gcas(i, main, nln, c)
 	default:
-		panic("Ctrie is in an invalid state")
+		panic("Map is in an invalid state")
 	}
 }
 
-// ilookup attempts to fetch the entry from the Ctrie. The first two return
+// ilookup attempts to fetch the entry from the Map. The first two return
 // values are the entry value and whether or not the entry was contained in the
-// Ctrie. The last bool indicates if the operation succeeded. False means it
+// Map. The last bool indicates if the operation succeeded. False means it
 // should be retried.
-func (c *Ctrie(Key, Value)) ilookup(i *iNode(Key, Value), entry *Entry(Key, Value), lev uint, parent *iNode(Key, Value), startGen *generation) (Value, bool, bool) {
+func (c *Map(Key, Value)) ilookup(i *iNode(Key, Value), entry *Entry(Key, Value), lev uint, parent *iNode(Key, Value), startGen *generation) (Value, bool, bool) {
 	// Linearization point.
 	main := gcasRead(i, c)
 	switch {
@@ -437,8 +444,8 @@ func (c *Ctrie(Key, Value)) ilookup(i *iNode(Key, Value), entry *Entry(Key, Valu
 			// required hashcode prefix is not present in the trie.
 			return z(Value)(), false, true
 		}
-		// Otherwise, the relevant branch at index pos is read from the array.
-		branch := cn.array[pos]
+		// Otherwise, the relevant branch at index pos is read from the slice.
+		branch := cn.slice[pos]
 		switch branch := branch.(type) {
 		case *iNode(Key, Value):
 			// If the branch is an I-node, the ilookup procedure is called
@@ -463,7 +470,7 @@ func (c *Ctrie(Key, Value)) ilookup(i *iNode(Key, Value), entry *Entry(Key, Valu
 			}
 			return z(Value)(), false, true
 		default:
-			panic("Ctrie is in an invalid state")
+			panic("Map is in an invalid state")
 		}
 	case main.tNode != nil:
 		return cleanReadOnly(main.tNode, lev, parent, c, entry)
@@ -473,15 +480,15 @@ func (c *Ctrie(Key, Value)) ilookup(i *iNode(Key, Value), entry *Entry(Key, Valu
 		val, ok := main.lNode.lookup(entry, c.eqFunc)
 		return val, ok, true
 	default:
-		panic("Ctrie is in an invalid state")
+		panic("Map is in an invalid state")
 	}
 }
 
-// iremove attempts to remove the entry from the Ctrie. The first two return
+// iremove attempts to remove the entry from the Map. The first two return
 // values are the entry value and whether or not the entry was contained in the
-// Ctrie. The last bool indicates if the operation succeeded. False means it
+// Map. The last bool indicates if the operation succeeded. False means it
 // should be retried.
-func (c *Ctrie(Key, Value)) iremove(i *iNode(Key, Value), entry *Entry(Key, Value), lev uint, parent *iNode(Key, Value), startGen *generation) (Value, bool, bool) {
+func (c *Map(Key, Value)) iremove(i *iNode(Key, Value), entry *Entry(Key, Value), lev uint, parent *iNode(Key, Value), startGen *generation) (Value, bool, bool) {
 	// Linearization point.
 	main := gcasRead(i, c)
 	switch {
@@ -493,8 +500,8 @@ func (c *Ctrie(Key, Value)) iremove(i *iNode(Key, Value), entry *Entry(Key, Valu
 			// required hashcode prefix is not present in the trie.
 			return z(Value)(), false, true
 		}
-		// Otherwise, the relevant branch at index pos is read from the array.
-		branch := cn.array[pos]
+		// Otherwise, the relevant branch at index pos is read from the slice.
+		branch := cn.slice[pos]
 		switch branch := branch.(type) {
 		case *iNode(Key, Value):
 			// If the branch is an I-node, the iremove procedure is called
@@ -534,7 +541,7 @@ func (c *Ctrie(Key, Value)) iremove(i *iNode(Key, Value), entry *Entry(Key, Valu
 			}
 			return z(Value)(), false, false
 		default:
-			panic("Ctrie is in an invalid state")
+			panic("Map is in an invalid state")
 		}
 	case main.tNode != nil:
 		clean(parent, lev-w, c)
@@ -553,14 +560,14 @@ func (c *Ctrie(Key, Value)) iremove(i *iNode(Key, Value), entry *Entry(Key, Valu
 		}
 		return z(Value)(), false, true
 	default:
-		panic("Ctrie is in an invalid state")
+		panic("Map is in an invalid state")
 	}
 }
 
 
-// iNode is an indirection node. I-nodes remain present in the Ctrie even as
+// iNode is an indirection node. I-nodes remain present in the Map even as
 // nodes above and below change. Thread-safety is achieved in part by
-// performing CAS operations on the I-node instead of the internal node array.
+// performing CAS operations on the I-node instead of the internal node slice.
 type iNode(type Key, Value) struct {
 	main *mainNode(Key, Value)
 	gen  *generation
@@ -572,7 +579,7 @@ type iNode(type Key, Value) struct {
 }
 
 // copyToGen returns a copy of this I-node copied to the given generation.
-func (i *iNode(Key, Value)) copyToGen(gen *generation, ctrie *Ctrie(Key, Value)) *iNode(Key, Value) {
+func (i *iNode(Key, Value)) copyToGen(gen *generation, ctrie *Map(Key, Value)) *iNode(Key, Value) {
 	nin := &iNode(Key, Value){gen: gen}
 	main := gcasRead(i, ctrie)
 	gatomic.StorePointer(&nin.main, main)
@@ -594,12 +601,12 @@ type mainNode(type Key, Value) struct {
 	prev *mainNode(Key, Value)
 }
 
-// cNode is an internal main node containing a bitmap and the array with
+// cNode is an internal main node containing a bitmap and the slice with
 // references to branch nodes. A branch node is either another I-node or a
 // singleton S-node.
 type cNode(type Key, Value) struct {
 	bmp   uint32
-	array []branch
+	slice []branch
 	gen   *generation
 }
 
@@ -636,59 +643,76 @@ func newMainNode(type Key, Value)(x *sNode(Key, Value), xhc uint32, y *sNode(Key
 // inserted returns a copy of this cNode with the new entry at the given
 // position.
 func (c *cNode(Key, Value)) inserted(pos, flag uint32, br branch, gen *generation) *cNode(Key, Value) {
-	length := uint32(len(c.array))
+	length := uint32(len(c.slice))
 	bmp := c.bmp
-	array := make([]branch, length+1)
-	copy(array, c.array)
-	array[pos] = br
+	slice := make([]branch, length+1)
+	copy(slice, c.slice)
+	slice[pos] = br
 	for i, x := pos, uint32(0); x < length-pos; i++ {
-		array[i+1] = c.array[i]
+		// TODO couldn't we do this with a copy?
+		slice[i+1] = c.slice[i]
 		x++
 	}
-	ncn := &cNode(Key, Value){bmp: bmp | flag, array: array, gen: gen}
+	ncn := &cNode(Key, Value){
+		bmp: bmp | flag,
+		slice: slice,
+		gen: gen,
+	}
 	return ncn
 }
 
 // updated returns a copy of this cNode with the entry at the given index
 // updated.
 func (c *cNode(Key, Value)) updated(pos uint32, br branch, gen *generation) *cNode(Key, Value) {
-	array := make([]branch, len(c.array))
-	copy(array, c.array)
-	array[pos] = br
-	ncn := &cNode(Key, Value){bmp: c.bmp, array: array, gen: gen}
-	return ncn
+	slice := make([]branch, len(c.slice))
+	copy(slice, c.slice)
+	slice[pos] = br
+	return &cNode(Key, Value){
+		bmp: c.bmp,
+		slice: slice,
+		gen: gen,
+	}
 }
 
 // removed returns a copy of this cNode with the entry at the given index
 // removed.
 func (c *cNode(Key, Value)) removed(pos, flag uint32, gen *generation) *cNode(Key, Value) {
-	length := uint32(len(c.array))
+	length := uint32(len(c.slice))
 	bmp := c.bmp
-	array := make([]branch, length-1)
+	slice := make([]branch, length-1)
+	// TODO use a copy for these.
 	for i := uint32(0); i < pos; i++ {
-		array[i] = c.array[i]
+		slice[i] = c.slice[i]
 	}
 	for i, x := pos, uint32(0); x < length-pos-1; i++ {
-		array[i] = c.array[i+1]
+		slice[i] = c.slice[i+1]
 		x++
 	}
-	ncn := &cNode(Key, Value){bmp: bmp ^ flag, array: array, gen: gen}
+	ncn := &cNode(Key, Value){
+		bmp: bmp ^ flag,
+		slice: slice,
+		gen: gen,
+	}
 	return ncn
 }
 
 // renewed returns a copy of this cNode with the I-nodes below it copied to the
 // given generation.
-func (c *cNode(Key, Value)) renewed(gen *generation, ctrie *Ctrie(Key, Value)) *cNode(Key, Value) {
-	array := make([]branch, len(c.array))
-	for i, br := range c.array {
+func (c *cNode(Key, Value)) renewed(gen *generation, ctrie *Map(Key, Value)) *cNode(Key, Value) {
+	slice := make([]branch, len(c.slice))
+	for i, br := range c.slice {
 		switch t := br.(type) {
 		case *iNode(Key, Value):
-			array[i] = t.copyToGen(gen, ctrie)
+			slice[i] = t.copyToGen(gen, ctrie)
 		default:
-			array[i] = br
+			slice[i] = br
 		}
 	}
-	return &cNode(Key, Value){bmp: c.bmp, array: array, gen: gen}
+	return &cNode(Key, Value){
+		bmp: c.bmp,
+		slice: slice,
+		gen: gen,
+	}
 }
 
 // tNode is tomb node which is a special node used to ensure proper ordering
@@ -751,7 +775,7 @@ func (l *lNode(Key, Value)) remove(l1 *lNode(Key, Value)) *lNode(Key, Value) {
 // branch is either *iNode or *sNode.
 type branch interface{}
 
-// Entry contains a Ctrie key-value pair.
+// Entry contains a Map key-value pair.
 type Entry(type Key, Value) struct {
 	Key   Key
 	Value Value
@@ -762,13 +786,14 @@ type Entry(type Key, Value) struct {
 type sNode(type Key, Value) struct {
 	entry *Entry(Key, Value)
 }
+
 // toContracted ensures that every I-node except the root points to a C-node
 // with at least one branch. If a given C-Node has only a single S-node below
 // it and is not at the root level, a T-node which wraps the S-node is
 // returned.
 func toContracted(type Key, Value)(cn *cNode(Key, Value), lev uint) *mainNode(Key, Value) {
-	if lev > 0 && len(cn.array) == 1 {
-		switch branch := cn.array[0].(type) {
+	if lev > 0 && len(cn.slice) == 1 {
+		switch branch := cn.slice[0].(type) {
 		case *sNode(Key, Value):
 			return entomb(branch)
 		default:
@@ -780,21 +805,24 @@ func toContracted(type Key, Value)(cn *cNode(Key, Value), lev uint) *mainNode(Ke
 
 // toCompressed compacts the C-node as a performance optimization.
 func toCompressed(type Key, Value)(cn *cNode(Key, Value), lev uint) *mainNode(Key, Value) {
-	tmpArray := make([]branch, len(cn.array))
-	for i, sub := range cn.array {
+	tmpSlice := make([]branch, len(cn.slice))
+	for i, sub := range cn.slice {
 		switch sub := sub.(type) {
 		case *iNode(Key, Value):
 			inode := sub
 			main := gatomic.LoadPointer(&inode.main)
-			tmpArray[i] = resurrect(inode, main)
+			tmpSlice[i] = resurrect(inode, main)
 		case *sNode(Key, Value):
-			tmpArray[i] = sub
+			tmpSlice[i] = sub
 		default:
-			panic("Ctrie is in an invalid state")
+			panic("Map is in an invalid state")
 		}
 	}
 
-	return toContracted(&cNode(Key, Value){bmp: cn.bmp, array: tmpArray}, lev)
+	return toContracted(&cNode(Key, Value){
+		bmp: cn.bmp,
+		slice: tmpSlice,
+	}, lev)
 }
 
 func entomb(type Key, Value)(m *sNode(Key, Value)) *mainNode(Key, Value) {
@@ -808,7 +836,7 @@ func resurrect(type Key, Value)(iNode *iNode(Key, Value), main *mainNode(Key, Va
 	return iNode
 }
 
-func clean(type Key, Value)(i *iNode(Key, Value), lev uint, ctrie *Ctrie(Key, Value)) bool {
+func clean(type Key, Value)(i *iNode(Key, Value), lev uint, ctrie *Map(Key, Value)) bool {
 	main := gcasRead(i, ctrie)
 	if main.cNode != nil {
 		return gcas(i, main, toCompressed(main.cNode, lev), ctrie)
@@ -816,7 +844,7 @@ func clean(type Key, Value)(i *iNode(Key, Value), lev uint, ctrie *Ctrie(Key, Va
 	return true
 }
 
-func cleanReadOnly(type Key, Value)(tn *tNode(Key, Value), lev uint, p *iNode(Key, Value), ctrie *Ctrie(Key, Value), entry *Entry(Key, Value)) (val Value, exists bool, ok bool) {
+func cleanReadOnly(type Key, Value)(tn *tNode(Key, Value), lev uint, p *iNode(Key, Value), ctrie *Map(Key, Value), entry *Entry(Key, Value)) (val Value, exists bool, ok bool) {
 	if !ctrie.readOnly {
 		clean(p, lev-5, ctrie)
 		return z(Value)(), false, false
@@ -827,13 +855,13 @@ func cleanReadOnly(type Key, Value)(tn *tNode(Key, Value), lev uint, p *iNode(Ke
 	return z(Value)(), false, true
 }
 
-func cleanParent(type Key, Value)(p, i *iNode(Key, Value), hc uint32, lev uint, ctrie *Ctrie(Key, Value), startGen *generation) {
+func cleanParent(type Key, Value)(p, i *iNode(Key, Value), hc uint32, lev uint, ctrie *Map(Key, Value), startGen *generation) {
 	main := gatomic.LoadPointer(&i.main)
 	pMain := gatomic.LoadPointer(&p.main)
 	if pMain.cNode != nil {
 		flag, pos := flagPos(hc, lev, pMain.cNode.bmp)
 		if pMain.cNode.bmp&flag != 0 {
-			sub := pMain.cNode.array[pos]
+			sub := pMain.cNode.slice[pos]
 			if sub == i && main.tNode != nil {
 				ncn := pMain.cNode.updated(pos, resurrect(i, main), i.gen)
 				if !gcas(p, pMain, toContracted(ncn, lev), ctrie) && ctrie.readRoot().gen == startGen {
@@ -863,9 +891,9 @@ func bitCount(x uint32) uint32 {
 // gcas is a generation-compare-and-swap which has semantics similar to RDCSS,
 // but it does not create the intermediate object except in the case of
 // failures that occur due to the clone being taken. This ensures that the
-// write occurs only if the Ctrie root generation has remained the same in
+// write occurs only if the Map root generation has remained the same in
 // addition to the I-node having the expected value.
-func gcas(type Key, Value)(in *iNode(Key, Value), old, n *mainNode(Key, Value), ct *Ctrie(Key, Value)) bool {
+func gcas(type Key, Value)(in *iNode(Key, Value), old, n *mainNode(Key, Value), ct *Map(Key, Value)) bool {
 	gatomic.StorePointer(&n.prev, old)
 	if gatomic.CompareAndSwapPointer(&in.main, old, n) {
 		gcasComplete(in, n, ct)
@@ -875,7 +903,7 @@ func gcas(type Key, Value)(in *iNode(Key, Value), old, n *mainNode(Key, Value), 
 }
 
 // gcasRead performs a GCAS-linearizable read of the I-node's main node.
-func gcasRead(type Key, Value)(in *iNode(Key, Value), ctrie *Ctrie(Key, Value)) *mainNode(Key, Value) {
+func gcasRead(type Key, Value)(in *iNode(Key, Value), ctrie *Map(Key, Value)) *mainNode(Key, Value) {
 	m := gatomic.LoadPointer(&in.main)
 	prev := gatomic.LoadPointer(&m.prev)
 	if prev == nil {
@@ -885,7 +913,7 @@ func gcasRead(type Key, Value)(in *iNode(Key, Value), ctrie *Ctrie(Key, Value)) 
 }
 
 // gcasComplete commits the GCAS operation.
-func gcasComplete(type Key, Value)(i *iNode(Key, Value), m *mainNode(Key, Value), ctrie *Ctrie(Key, Value)) *mainNode(Key, Value) {
+func gcasComplete(type Key, Value)(i *iNode(Key, Value), m *mainNode(Key, Value), ctrie *Map(Key, Value)) *mainNode(Key, Value) {
 	for {
 		if m == nil {
 			return nil
@@ -932,16 +960,16 @@ type rdcssDescriptor(type Key, Value) struct {
 	committed int32
 }
 
-// readRoot performs a linearizable read of the Ctrie root. This operation is
+// readRoot performs a linearizable read of the Map root. This operation is
 // prioritized so that if another thread performs a GCAS on the root, a
 // deadlock does not occur.
-func (c *Ctrie(Key, Value)) readRoot() *iNode(Key, Value) {
+func (c *Map(Key, Value)) readRoot() *iNode(Key, Value) {
 	return c.rdcssReadRoot(false)
 }
 
-// rdcssReadRoot performs a RDCSS-linearizable read of the Ctrie root with the
+// rdcssReadRoot performs a RDCSS-linearizable read of the Map root with the
 // given priority.
-func (c *Ctrie(Key, Value)) rdcssReadRoot(abort bool) *iNode(Key, Value) {
+func (c *Map(Key, Value)) rdcssReadRoot(abort bool) *iNode(Key, Value) {
 	r := gatomic.LoadPointer(&c.root)
 	if r.rdcss != nil {
 		return c.rdcssComplete(abort)
@@ -949,10 +977,10 @@ func (c *Ctrie(Key, Value)) rdcssReadRoot(abort bool) *iNode(Key, Value) {
 	return r
 }
 
-// rdcssRoot performs a RDCSS on the Ctrie root. This is used to create a
-// clone of the Ctrie by copying the root I-node and setting it to a new
+// rdcssRoot performs a RDCSS on the Map root. This is used to create a
+// clone of the Map by copying the root I-node and setting it to a new
 // generation.
-func (c *Ctrie(Key, Value)) rdcssRoot(old *iNode(Key, Value), expected *mainNode(Key, Value), nv *iNode(Key, Value)) bool {
+func (c *Map(Key, Value)) rdcssRoot(old *iNode(Key, Value), expected *mainNode(Key, Value), nv *iNode(Key, Value)) bool {
 	desc := &iNode(Key, Value){
 		rdcss: &rdcssDescriptor(Key, Value){
 			old:      old,
@@ -968,7 +996,7 @@ func (c *Ctrie(Key, Value)) rdcssRoot(old *iNode(Key, Value), expected *mainNode
 }
 
 // rdcssComplete commits the RDCSS operation.
-func (c *Ctrie(Key, Value)) rdcssComplete(abort bool) *iNode(Key, Value) {
+func (c *Map(Key, Value)) rdcssComplete(abort bool) *iNode(Key, Value) {
 	for {
 		r := gatomic.LoadPointer(&c.root)
 		if r.rdcss == nil {
@@ -1005,8 +1033,8 @@ func (c *Ctrie(Key, Value)) rdcssComplete(abort bool) *iNode(Key, Value) {
 	}
 }
 
-// casRoot performs a CAS on the Ctrie root.
-func (c *Ctrie(Key, Value)) casRoot(ov, nv *iNode(Key, Value)) bool {
+// casRoot performs a CAS on the Map root.
+func (c *Map(Key, Value)) casRoot(ov, nv *iNode(Key, Value)) bool {
 	c.assertReadWrite()
 	return gatomic.CompareAndSwapPointer(&c.root, ov, nv)
 }
