@@ -134,9 +134,9 @@ func (c *Ctrie(Key, Value)) Get(key Key) (Value, bool) {
 	})
 }
 
-// Remove deletes the value for the associated key, returning true if it was
-// removed or false if the entry doesn't exist.
-func (c *Ctrie(Key, Value)) Remove(key Key) (Value, bool) {
+// Delete deletes the value for the associated key, returning true if it was
+// removed or false and the zero value if the entry doesn't exist.
+func (c *Ctrie(Key, Value)) Delete(key Key) (Value, bool) {
 	c.assertReadWrite()
 	return c.remove(&Entry(Key, Value){
 		Key: key,

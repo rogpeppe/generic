@@ -60,19 +60,19 @@ func TestCtrie(t *testing.T) {
 	assertTrue(t, ok)
 	assertEqual(t, "qux", val)
 
-	val, ok = ctrie.Remove([]byte("foo"))
+	val, ok = ctrie.Delete([]byte("foo"))
 	assertTrue(t, ok)
 	assertEqual(t, "qux", val)
 
-	_, ok = ctrie.Remove([]byte("foo"))
+	_, ok = ctrie.Delete([]byte("foo"))
 	assertFalse(t, ok)
 
-	val, ok = ctrie.Remove([]byte("fooooo"))
+	val, ok = ctrie.Delete([]byte("fooooo"))
 	assertTrue(t, ok)
 	assertEqual(t, "baz", val)
 
 	for i := 0; i < 100; i++ {
-		ctrie.Remove([]byte(strconv.Itoa(i)))
+		ctrie.Delete([]byte(strconv.Itoa(i)))
 	}
 }
 
@@ -92,7 +92,7 @@ func TestSetLNode(t *testing.T) {
 	assertFalse(t, ok)
 
 	for i := 0; i < 10; i++ {
-		val, ok := ctrie.Remove([]byte(strconv.Itoa(i)))
+		val, ok := ctrie.Delete([]byte(strconv.Itoa(i)))
 		assertTrue(t, ok)
 		assertEqual(t, i, val)
 	}
@@ -106,7 +106,7 @@ func TestSetTNode(t *testing.T) {
 	}
 
 	for i := 0; i < 5000; i++ {
-		ctrie.Remove([]byte(strconv.Itoa(i)))
+		ctrie.Delete([]byte(strconv.Itoa(i)))
 	}
 
 	for i := 0; i < 10000; i++ {
@@ -144,7 +144,7 @@ func TestConcurrency(t *testing.T) {
 
 	for i := 0; i < 10000; i++ {
 		time.Sleep(5)
-		ctrie.Remove([]byte(strconv.Itoa(i)))
+		ctrie.Delete([]byte(strconv.Itoa(i)))
 	}
 
 	wg.Wait()
@@ -207,7 +207,7 @@ func TestClone(t *testing.T) {
 
 	// Now remove the values from the original.
 	for i := 0; i < 100; i++ {
-		ctrie.Remove([]byte(strconv.Itoa(i)))
+		ctrie.Delete([]byte(strconv.Itoa(i)))
 	}
 
 	// Ensure snapshot was unaffected by removals.
@@ -226,7 +226,7 @@ func TestClone(t *testing.T) {
 
 	// Ensure snapshot is mutable.
 	for i := 0; i < 100; i++ {
-		snapshot.Remove([]byte(strconv.Itoa(i)))
+		snapshot.Delete([]byte(strconv.Itoa(i)))
 	}
 	snapshot.Set([]byte("bat"), "man")
 
@@ -257,7 +257,7 @@ func TestClone(t *testing.T) {
 	assertTrue(t, ok)
 	assertEqual(t, "man", val)
 
-	snapshot2.Remove([]byte("bat"))
+	snapshot2.Delete([]byte("bat"))
 	_, ok = snapshot2.Get([]byte("bat"))
 	assertFalse(t, ok)
 	val, ok = snapshot.Get([]byte("bat"))
@@ -281,7 +281,7 @@ func TestRClone(t *testing.T) {
 	}
 
 	for i := 0; i < 50; i++ {
-		ctrie.Remove([]byte(strconv.Itoa(i)))
+		ctrie.Delete([]byte(strconv.Itoa(i)))
 	}
 
 	// Ensure snapshot was unaffected by removals.
@@ -296,13 +296,13 @@ func TestRClone(t *testing.T) {
 		defer func() {
 			assertNotNil(t, recover())
 		}()
-		snapshot.Remove([]byte("blah"))
+		snapshot.Delete([]byte("blah"))
 	}()
 
 	// Ensure snapshots-of-snapshots work as expected.
 	snapshot2 := snapshot.Clone()
 	for i := 50; i < 100; i++ {
-		ctrie.Remove([]byte(strconv.Itoa(i)))
+		ctrie.Delete([]byte(strconv.Itoa(i)))
 	}
 	for i := 0; i < 100; i++ {
 		val, ok := snapshot2.Get([]byte(strconv.Itoa(i)))
@@ -315,7 +315,7 @@ func TestRClone(t *testing.T) {
 		defer func() {
 			assertNotNil(t, recover())
 		}()
-		snapshot2.Remove([]byte("blah"))
+		snapshot2.Delete([]byte("blah"))
 	}()
 }
 
@@ -356,7 +356,7 @@ func TestIteratorCoversTNodes(t *testing.T) {
 	ctrie.Set([]byte("b"), true)
 	// Delete one key, leaving exactly one sNode in the cNode.  This will
 	// trigger creation of a tNode.
-	ctrie.Remove([]byte("b"))
+	ctrie.Delete([]byte("b"))
 	seenKeys := map[string]bool{}
 	for iter := ctrie.Iterator(); iter.Next(); {
 		seenKeys[string(iter.Key())] = true
@@ -402,7 +402,7 @@ func TestHashCollision(t *testing.T) {
 	assertTrue(t, exists)
 	assertEqual(t, 3, val)
 
-	trie.Remove([]byte("foobar"))
+	trie.Delete([]byte("foobar"))
 
 	_, exists = trie.Get([]byte("foobar"))
 	assertFalse(t, exists)
@@ -430,7 +430,7 @@ func BenchmarkGet(b *testing.B) {
 	}
 }
 
-func BenchmarkRemove(b *testing.B) {
+func BenchmarkDelete(b *testing.B) {
 	numItems := 1000
 	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	for i := 0; i < numItems; i++ {
@@ -440,7 +440,7 @@ func BenchmarkRemove(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ctrie.Remove(key)
+		ctrie.Delete(key)
 	}
 }
 
