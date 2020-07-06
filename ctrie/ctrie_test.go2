@@ -17,8 +17,7 @@ limitations under the License.
 package ctrie
 
 import (
-	"hash"
-	"hash/fnv"
+	"bytes"
 	"strconv"
 	"sync"
 	"testing"
@@ -26,7 +25,7 @@ import (
 )
 
 func TestCtrie(t *testing.T) {
-	ctrie := New(string)(nil)
+	ctrie := NewWithFuncs([]byte, string)(bytes.Equal, BytesHash)
 
 	_, ok := ctrie.Get([]byte("foo"))
 	assertFalse(t, ok)
@@ -77,20 +76,8 @@ func TestCtrie(t *testing.T) {
 	}
 }
 
-type mockHash32 struct {
-	hash.Hash32
-}
-
-func (m *mockHash32) Sum32() uint32 {
-	return 0
-}
-
-func mockHashFactory() hash.Hash32 {
-	return &mockHash32{fnv.New32a()}
-}
-
 func TestSetLNode(t *testing.T) {
-	ctrie := New(int)(mockHashFactory)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, func([]byte) uint32 { return 0 })
 
 	for i := 0; i < 10; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
@@ -112,7 +99,7 @@ func TestSetLNode(t *testing.T) {
 }
 
 func TestSetTNode(t *testing.T) {
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 
 	for i := 0; i < 10000; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
@@ -134,7 +121,7 @@ func TestSetTNode(t *testing.T) {
 }
 
 func TestConcurrency(t *testing.T) {
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -164,7 +151,7 @@ func TestConcurrency(t *testing.T) {
 }
 
 func TestConcurrency2(t *testing.T) {
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	var wg sync.WaitGroup
 	wg.Add(4)
 
@@ -204,7 +191,7 @@ func TestConcurrency2(t *testing.T) {
 }
 
 func TestClone(t *testing.T) {
-	ctrie := New(interface{})(nil)
+	ctrie := NewWithFuncs([]byte, interface{})(bytes.Equal, BytesHash)
 	for i := 0; i < 100; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -231,7 +218,7 @@ func TestClone(t *testing.T) {
 	}
 
 	// New Ctrie and snapshot.
-	ctrie = New(interface{})(nil)
+	ctrie = NewWithFuncs([]byte, interface{})(bytes.Equal, BytesHash)
 	for i := 0; i < 100; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -279,7 +266,7 @@ func TestClone(t *testing.T) {
 }
 
 func TestRClone(t *testing.T) {
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	for i := 0; i < 100; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -333,7 +320,7 @@ func TestRClone(t *testing.T) {
 }
 
 func TestIterator(t *testing.T) {
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	for i := 0; i < 10; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -363,7 +350,7 @@ func TestIterator(t *testing.T) {
 
 // TestIteratorCoversTNodes reproduces the scenario of a bug where tNodes weren't being traversed.
 func TestIteratorCoversTNodes(t *testing.T) {
-	ctrie := New(bool)(mockHashFactory)
+	ctrie := NewWithFuncs([]byte, bool)(bytes.Equal, func([]byte) uint32 { return 0 })
 	// Add a pair of keys that collide (because we're using the mock hash).
 	ctrie.Set([]byte("a"), true)
 	ctrie.Set([]byte("b"), true)
@@ -383,7 +370,7 @@ func TestIteratorCoversTNodes(t *testing.T) {
 }
 
 func TestLen(t *testing.T) {
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	for i := 0; i < 10; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -391,7 +378,7 @@ func TestLen(t *testing.T) {
 }
 
 func TestClear(t *testing.T) {
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	for i := 0; i < 10; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -404,38 +391,10 @@ func TestClear(t *testing.T) {
 	assertEqual(t, 10, snapshot.Len())
 }
 
-type fakehash struct{}
-
-func (h *fakehash) Sum32() uint32 {
-	return 42
-}
-
-func (h *fakehash) Sum(b []byte) []byte {
-	return nil
-}
-
-func (h *fakehash) Size() int {
-	return 0
-}
-
-func (h *fakehash) BlockSize() int {
-	return 0
-}
-
-func (h *fakehash) Reset() {
-
-}
-
-func (h *fakehash) Write(b []byte) (int, error) {
-	return 0, nil
-}
-
-func factory() hash.Hash32 {
-	return &fakehash{}
-}
-
 func TestHashCollision(t *testing.T) {
-	trie := New(int)(factory)
+	trie := NewWithFuncs([]byte, int)(bytes.Equal, func([]byte) uint32 {
+		return 42
+	})
 	trie.Set([]byte("foobar"), 1)
 	trie.Set([]byte("zogzog"), 2)
 	trie.Set([]byte("foobar"), 3)
@@ -450,7 +409,7 @@ func TestHashCollision(t *testing.T) {
 }
 
 func BenchmarkSet(b *testing.B) {
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ctrie.Set([]byte("foo"), 0)
@@ -459,7 +418,7 @@ func BenchmarkSet(b *testing.B) {
 
 func BenchmarkGet(b *testing.B) {
 	numItems := 1000
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	for i := 0; i < numItems; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -473,7 +432,7 @@ func BenchmarkGet(b *testing.B) {
 
 func BenchmarkRemove(b *testing.B) {
 	numItems := 1000
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	for i := 0; i < numItems; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -487,7 +446,7 @@ func BenchmarkRemove(b *testing.B) {
 
 func BenchmarkClone(b *testing.B) {
 	numItems := 1000
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	for i := 0; i < numItems; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -500,7 +459,7 @@ func BenchmarkClone(b *testing.B) {
 
 func BenchmarkRClone(b *testing.B) {
 	numItems := 1000
-	ctrie := New(int)(nil)
+	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
 	for i := 0; i < numItems; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
