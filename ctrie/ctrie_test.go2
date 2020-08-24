@@ -24,8 +24,10 @@ import (
 	"time"
 )
 
+func _[_ any]()
+
 func TestCtrie(t *testing.T) {
-	ctrie := NewWithFuncs([]byte, string)(bytes.Equal, BytesHash)
+	ctrie := NewWithFuncs[[]byte, string](bytes.Equal, BytesHash)
 
 	_, ok := ctrie.Get([]byte("foo"))
 	assertFalse(t, ok)
@@ -218,7 +220,7 @@ func TestClone(t *testing.T) {
 	}
 
 	// New Ctrie and snapshot.
-	ctrie = NewWithFuncs([]byte, interface{})(bytes.Equal, BytesHash)
+	ctrie = NewWithFuncs([]byte, interface{})(nil, nil)
 	for i := 0; i < 100; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -266,7 +268,7 @@ func TestClone(t *testing.T) {
 }
 
 func TestRClone(t *testing.T) {
-	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
+	ctrie := NewWithFuncs([]byte, int)(nil, nil)
 	for i := 0; i < 100; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -320,7 +322,7 @@ func TestRClone(t *testing.T) {
 }
 
 func TestIterator(t *testing.T) {
-	ctrie := NewWithFuncs([]byte, int)(bytes.Equal, BytesHash)
+	ctrie := NewWithFuncs([]byte, int)(nil, nil)
 	for i := 0; i < 10; i++ {
 		ctrie.Set([]byte(strconv.Itoa(i)), i)
 	}
@@ -350,7 +352,7 @@ func TestIterator(t *testing.T) {
 
 // TestIteratorCoversTNodes reproduces the scenario of a bug where tNodes weren't being traversed.
 func TestIteratorCoversTNodes(t *testing.T) {
-	ctrie := NewWithFuncs([]byte, bool)(bytes.Equal, func([]byte) uint64 { return 0 })
+	ctrie := NewWithFuncs([]byte, bool)(nil, func([]byte) uint64 { return 0 })
 	// Add a pair of keys that collide (because we're using the mock hash).
 	ctrie.Set([]byte("a"), true)
 	ctrie.Set([]byte("b"), true)
@@ -486,7 +488,7 @@ func assertFalse(t *testing.T, x bool) {
 	}
 }
 
-func assertEqual(type T comparable)(t *testing.T, x, y T) {
+func assertEqual[T comparable](t *testing.T, x, y T) {
 	t.Helper()
 	if x != y {
 		t.Errorf("not equal, got %#v want %#v", y, x)

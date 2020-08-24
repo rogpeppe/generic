@@ -9,7 +9,7 @@ import (
 )
 
 func TestSingleCall(t *testing.T) {
-	var caller Caller(int, string)
+	var caller Caller[int, string]
 	s, err := caller.Do(123, func(is ...int) ([]string, error) {
 		if got, want := len(is), 1; got != want {
 			t.Errorf("unexpected argument count; got %d want %d", got, want)
@@ -25,7 +25,7 @@ func TestSingleCall(t *testing.T) {
 }
 
 func TestMultipleCalls(t *testing.T) {
-	caller := NewCaller(int, string)(2, 0)
+	caller := NewCaller[int, string](2, 0)
 
 	callDuration := 50 * time.Millisecond
 	stringer := func(is ...int) ([]string, error) {

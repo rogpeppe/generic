@@ -5,15 +5,15 @@ import (
 	"sync/atomic"
 )
 
-func LoadPointer(type T)(addr **T) *T {
+func LoadPointer[T any](addr **T) *T {
 	return (*T)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(addr))))
 }
 
-func StorePointer(type T)(addr **T, val *T) {
+func StorePointer[T any](addr **T, val *T) {
 	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(addr)), unsafe.Pointer(val))
 }
 
-func CompareAndSwapPointer(type T)(addr **T, old, new *T) (swapped bool) {
+func CompareAndSwapPointer[T any](addr **T, old, new *T) (swapped bool) {
 	return atomic.CompareAndSwapPointer(
 		(*unsafe.Pointer)(unsafe.Pointer(addr)),
 		unsafe.Pointer(old),
