@@ -82,7 +82,7 @@ type Reader[T any] interface {
 // Write must not modify the slice data, even temporarily.
 //
 // Implementations must not retain p.
-type Writer[type T] interface {
+type Writer[T any] interface {
 	Write(p []T) (n int, err error)
 }
 
@@ -124,32 +124,32 @@ type ReadCloser[T any] interface {
 }
 
 // WriteCloser is the interface that groups the basic Write and Close methods.
-type WriteCloser[T] interface {
+type WriteCloser[T any] interface {
 	Writer[T]
 	Closer
 }
 
 // ReadWriteCloser is the interface that groups the basic Read, Write and Close methods.
-type ReadWriteCloser[T] interface {
+type ReadWriteCloser[T any] interface {
 	Reader[T]
 	Writer[T]
 	Closer
 }
 
 // ReadSeeker is the interface that groups the basic Read and Seek methods.
-type ReadSeeker[T] interface {
+type ReadSeeker[T any] interface {
 	Reader[T]
 	Seeker
 }
 
 // WriteSeeker is the interface that groups the basic Write and Seek methods.
-type WriteSeeker[T] interface {
+type WriteSeeker[T any] interface {
 	Writer[T]
 	Seeker
 }
 
 // ReadWriteSeeker is the interface that groups the basic Read, Write and Seek methods.
-type ReadWriteSeeker[T] interface {
+type ReadWriteSeeker[T any] interface {
 	Reader[T]
 	Writer[T]
 	Seeker
@@ -162,7 +162,7 @@ type ReadWriteSeeker[T] interface {
 // Any error except io.EOF encountered during the read is also returned.
 //
 // The Copy function uses ReaderFrom if available.
-type ReaderFrom[T] interface {
+type ReaderFrom[T any] interface {
 	ReadFrom(r Reader[T]) (n int64, err error)
 }
 
@@ -203,7 +203,7 @@ type WriterTo[T any] interface {
 // same input source.
 //
 // Implementations must not retain p.
-type ReaderAt[type T] interface {
+type ReaderAt[T any] interface {
 	ReadAt(p []T, off int64) (n int, err error)
 }
 
