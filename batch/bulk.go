@@ -4,6 +4,7 @@
 // Eventually, this could potentially live in x/sync alongside
 // the singleflight package.
 package batch
+
 import (
 	"fmt"
 	"sync"
@@ -13,12 +14,12 @@ import (
 // Caller represents a batch caller. It accumulates multiple calls
 // into a single "batch" call to reduce the total number of calls made.
 // The zero value is equivalent to NewCaller(0, 0).
-type Caller[Value, Result any]struct {
-	initialDelay time.Duration
+type Caller[Value, Result any] struct {
+	initialDelay   time.Duration
 	maxConcurrency int
-	mu sync.Mutex
-	sem chan struct{}
-	acc *accumulator[Value, Result]
+	mu             sync.Mutex
+	sem            chan struct{}
+	acc            *accumulator[Value, Result]
 }
 
 // NewCaller returns a Caller that issues a maximum of maxConcurrency
@@ -29,7 +30,7 @@ type Caller[Value, Result any]struct {
 // If maxConcurrency is non-positive, 1 concurrent call will be allowed.
 func NewCaller[Value, Result any](maxConcurrency int, initialDelay time.Duration) *Caller[Value, Result] {
 	return &Caller[Value, Result]{
-		initialDelay: initialDelay,
+		initialDelay:   initialDelay,
 		maxConcurrency: maxConcurrency,
 	}
 }
@@ -51,7 +52,7 @@ func (g *Caller[V, R]) DoChan(v V, call func(vs ...V) ([]R, error)) <-chan Resul
 	acc := g.acc
 	isInitial := acc == nil
 	if isInitial {
-		acc = new(accumulator(V, R))
+		acc = new(accumulator[V, R])
 		g.acc = acc
 	}
 	acc.args = append(acc.args, v)
@@ -84,15 +85,15 @@ func (g *Caller[V, R]) Do(v V, call func(vs ...V) ([]R, error)) (R, error) {
 }
 
 // Result represents the result of a call.
-type Result[R any]struct {
+type Result[R any] struct {
 	Val R
 	Err error
 }
 
 // accumulator is used to accumulate arguments and result channels
 // prior to a call.
-type accumulator[V, R] struct {
-	args []V
+type accumulator[V, R any] struct {
+	args    []V
 	results []chan<- Result[R]
 }
 
