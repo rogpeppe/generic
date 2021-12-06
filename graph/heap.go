@@ -2,8 +2,8 @@ package graph
 
 func NewHeap[E any](items []E, less func(E, E) bool, setIndex func(e *E, i int)) *Heap[E] {
 	h := &Heap[E]{
-		Items: items,
-		less: less,
+		Items:    items,
+		less:     less,
 		setIndex: setIndex,
 	}
 	n := len(h.Items)
@@ -14,20 +14,18 @@ func NewHeap[E any](items []E, less func(E, E) bool, setIndex func(e *E, i int))
 }
 
 type Heap[E any] struct {
-	Items []E
-	less func(E, E) bool
+	Items    []E
+	less     func(E, E) bool
 	setIndex func(*E, int)
 }
 
 func (h *Heap[E]) Push(x E) {
-	// Push and Pop use pointer receivers because they modify the slice's length,
-	// not just its contents.
 	h.Items = append(h.Items, x)
-	h.up(len(h.Items)-1)
+	h.up(len(h.Items) - 1)
 }
 
 func (h *Heap[E]) Pop() E {
-	n := len(h.Items)-1
+	n := len(h.Items) - 1
 	h.swap(0, n)
 	h.down(0, n)
 	return h.pop()
@@ -59,9 +57,9 @@ func (h *Heap[E]) Remove(i int) E {
 }
 
 func (h *Heap[E]) pop() E {
-	n := len(h.Items)-1
+	n := len(h.Items) - 1
 	x := h.Items[n]
-	h.Items = h.Items[0 : n]
+	h.Items = h.Items[0:n]
 	return x
 }
 

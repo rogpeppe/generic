@@ -7,9 +7,8 @@ type Graph[Node comparable, Edge any] interface {
 
 // item holds an item in the node fringe being calculated by
 // ShortestPath. We might normally declare this inside ShortestPath
-// itself, but that would mean we couldn't refer to it globally in the
-// generated code (not a problem when doing generics directly in the
-// compiler)
+// itself, but local type declarations inside generic functions
+// aren't currently supported.
 type item[Node, Edge any] struct {
 	n     Node
 	dist  int
@@ -18,21 +17,17 @@ type item[Node, Edge any] struct {
 }
 
 func ShortestPath[Node comparable, Edge any](g Graph[Node, Edge], from, to Node) []Edge {
-	type itemNE = item[Node, Edge]
-	h := NewHeap([]*itemNE{{
+	h := NewHeap([]*item[Node, Edge]{{
 		n:     from,
 		dist:  0,
 		index: 0,
-	}}, func(i1, i2 *itemNE) bool {
+	}}, func(i1, i2 *item[Node, Edge]) bool {
 		return i1.dist < i2.dist
-	}, func(it **itemNE, i int) {
+	}, func(it **item[Node, Edge], i int) {
 		(*it).index = i
 	})
-	// Note: we'd like to use map[Node] *item but we
-	// can't do that since we can't provide the equality and
-	// hash functions to the internal map implementation.
-	nodes := make(map[Node]*itemNE)
-	var found *itemNE
+	nodes := make(map[Node]*item[Node, Edge])
+	var found *item[Node, Edge]
 	for len(h.Items) > 0 {
 		nearest := h.Pop()
 		if nearest.n == to {
@@ -47,7 +42,7 @@ func ShortestPath[Node comparable, Edge any](g Graph[Node, Edge], from, to Node)
 			dist := nearest.dist + 1 // Could use e.Length() instead of 1.
 			toItem, ok := nodes[edgeTo]
 			if !ok {
-				it := &itemNE{
+				it := &item[Node, Edge]{
 					n:    edgeTo,
 					dist: dist,
 					edge: e,

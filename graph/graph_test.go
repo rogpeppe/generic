@@ -58,8 +58,8 @@ func TestShortestPath(t *testing.T) {
 }
 
 func testShortestPath(t *testing.T, test graphTest) {
-	// Note: the results are in reverse order.
 	g := newGraph(test.arcs)
+	// Note: the results are in reverse order.
 	path := ShortestPath(Graph[int, int](g), test.from, test.to)
 	var got [][2]int
 	for _, e := range path {
