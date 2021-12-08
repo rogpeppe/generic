@@ -16,7 +16,7 @@ type fooer2[T any] struct {
 	r []Fooer[T]
 }
 
-func (mr fooer2[T]) Foo(p T){
+func (mr fooer2[T]) Foo(p T) {
 	mr.r[0] = fooer1[T]{}
 	return
 }

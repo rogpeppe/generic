@@ -12,7 +12,7 @@ type Equaler[T any] interface {
 // and removed and the set can be combined with
 // itself.
 type Set[
-	self Set[self, elem],
+	self any,
 	elem Equaler[elem],
 ] interface {
 	// New returns a new empty instance of the set.
@@ -43,7 +43,7 @@ type Iter[T any] interface {
 }
 
 type BitSet struct {
-	bits []uintptr
+	bits []uint64
 }
 
 type Int int
@@ -59,15 +59,47 @@ func (b *BitSet) New() *BitSet {
 }
 
 func (b *BitSet) Union(c, d *BitSet) *BitSet {
-	panic("unimplemented")
+	if b == nil {
+		b = new(BitSet)
+	}
+	if len(c.bits) < len(d.bits) {
+		c, d = d, c
+	}
+	cbits, dbits := c.bits, d.bits
+	if len(c.bits) > len(b.bits) {
+		b.bits = make([]uint64, len(c.bits))
+	}
+	for i := range b.bits {
+		b.bits[i] = cbits[i] | dbits[i]
+	}
+	return b
 }
 
 func (b *BitSet) Intersect(c, d *BitSet) *BitSet {
-	panic("unimplemented")
+	if b == nil {
+		b = new(BitSet)
+	}
+	if len(c.bits) > len(d.bits) {
+		c, d = d, c
+	}
+	cbits, dbits := c.bits, d.bits
+	if len(c.bits) > len(b.bits) {
+		b.bits = make([]uint64, len(c.bits))
+	}
+	for i := range b.bits {
+		b.bits[i] = cbits[i] & dbits[i]
+	}
+	return b
 }
 
 func (b *BitSet) Add(x Int) {
-	b.bits[x>>wbits] |= 1 << (x & (wbits - 1))
+	index := int(x >> wbits)
+	if index >= len(b.bits) {
+		bits := make([]uint64, index+1)
+		copy(bits, b.bits)
+		b.bits = bits
+	}
+	b.bits[index] |= 1 << (x & (wbits - 1))
 }
 
 func (b *BitSet) Remove(x Int) {
@@ -75,7 +107,23 @@ func (b *BitSet) Remove(x Int) {
 }
 
 func (b *BitSet) Iter() Iter[Int] {
+	return &bitIter{
+		bits:  b.bits,
+		index: -1,
+	}
+}
+
+type bitIter struct {
+	bits  []uint64
+	index int
+}
+
+func (iter *bitIter) Next() bool {
 	panic("unimplemented")
+}
+
+func (iter *bitIter) Item() Int {
+	return Int(iter.index)
 }
 
 // Verify that BitSet implements Set.

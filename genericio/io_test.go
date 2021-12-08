@@ -7,8 +7,8 @@ package genericio
 import (
 	"bytes"
 	"errors"
-	"io"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 )

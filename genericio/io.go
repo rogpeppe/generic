@@ -246,7 +246,7 @@ type ItemReader[T any] interface {
 // as the previous call to ReadItem.
 // It may be an error to call UnreadItem twice without an intervening
 // call to ReadItem.
-type ItemScanner[T any]interface {
+type ItemScanner[T any] interface {
 	ItemReader[T]
 	UnreadItem() error
 }
@@ -401,7 +401,7 @@ func LimitReader[T any](r Reader[T], n int64) Reader[T] { return &LimitedReader[
 // Read returns EOF when N <= 0 or when the underlying R returns EOF.
 type LimitedReader[T any] struct {
 	R Reader[T] // underlying reader
-	N int64  // max bytes remaining
+	N int64     // max bytes remaining
 }
 
 func (l *LimitedReader[T]) Read(p []T) (n int, err error) {

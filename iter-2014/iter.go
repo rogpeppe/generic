@@ -14,13 +14,14 @@
 // Points given for pointing out syntax errors, logical inconsistencies
 // or language-feature implementation roadtraps.
 package main
+
 import (
-	"sync"
-	"log"
 	"bufio"
-	"io"
-	"strings"
 	"fmt"
+	"io"
+	"log"
+	"strings"
+	"sync"
 )
 
 func main() {
@@ -93,7 +94,7 @@ type Pair[A, B any] struct {
 // values than the other, the other part of the
 // pair will contain the zero value.
 func Zip[A, B any](a Iter[A], b Iter[B]) Iter[Pair[A, B]] {
-	return &zipper[A, B] {
+	return &zipper[A, B]{
 		a: a,
 		b: b,
 	}
@@ -101,8 +102,8 @@ func Zip[A, B any](a Iter[A], b Iter[B]) Iter[Pair[A, B]] {
 
 type zipper[A, B any] struct {
 	err error
-	a Iter [A]
-	b Iter [B]
+	a   Iter[A]
+	b   Iter[B]
 }
 
 func (z *zipper[A, B]) Next() bool {
@@ -138,7 +139,6 @@ func (z *zipper[A, B]) Close() error {
 	return err1
 }
 
-
 func CloseAll[C io.Closer](xs []C) {
 	for _, x := range xs {
 		x.Close()
@@ -149,7 +149,7 @@ func CloseAll[C io.Closer](xs []C) {
 // a value f(x) for every value in the given iterator.
 // Any non-nil error returned from the underlying iterator
 // will be transformed by the given err function.
-func Map[S, T any] (
+func Map[S, T any](
 	iter Iter[S],
 	transformError func(error) error,
 	f func(S) T,
@@ -158,7 +158,7 @@ func Map[S, T any] (
 		transformError = Identity[error]
 	}
 	m := &mapping[S, T]{
-		f: f,
+		f:              f,
 		transformError: transformError,
 	}
 	// Can't put this in the struct literal because of https://github.com/golang/go/issues/44345
@@ -180,7 +180,7 @@ func Map[S, T any] (
 // }
 type mapping[S, T any] struct {
 	Iter[S]
-	f func(S) T
+	f              func(S) T
 	transformError func(error) error
 }
 
@@ -217,7 +217,7 @@ func (b bufioScanner) Close() error {
 }
 
 type slice[T any] struct {
-	first bool
+	first  bool
 	values []T
 }
 
@@ -225,7 +225,7 @@ type slice[T any] struct {
 // The values are traversed from beginning to end.
 func NewSlice[T any](values []T) Iter[T] {
 	return &slice[T]{
-		first: true,
+		first:  true,
 		values: values,
 	}
 }
@@ -265,7 +265,7 @@ func Sequence[T any](iters ...Iter[T]) Iter[T] {
 
 type sequence[T any] struct {
 	iters []Iter[T]
-	err error
+	err   error
 }
 
 func (s *sequence[T]) Next() bool {

@@ -1,11 +1,11 @@
 package batch
 
 import (
-	"testing"
 	"fmt"
 	"log"
-	"time"
 	"sync"
+	"testing"
+	"time"
 )
 
 func TestSingleCall(t *testing.T) {
@@ -55,7 +55,7 @@ func TestMultipleCalls(t *testing.T) {
 	}
 	wg.Wait()
 	total := time.Since(t0)
-	if got, want := total,  2 * callDuration + 10 * time.Millisecond; got > want {
+	if got, want := total, 2*callDuration+10*time.Millisecond; got > want {
 		t.Errorf("total took too long; got %v want %v", got, want)
 	}
 	log.Printf("total time %v", total)

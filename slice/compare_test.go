@@ -1,40 +1,41 @@
 package slice
+
 import "testing"
 
-var compareTests = []struct{
+var compareTests = []struct {
 	s1, s2 []string
-	want int
+	want   int
 }{{
-	s1: nil,
-	s2: nil,
+	s1:   nil,
+	s2:   nil,
 	want: 0,
 }, {
-	s1: []string{"a"},
-	s2: nil,
+	s1:   []string{"a"},
+	s2:   nil,
 	want: 1,
 }, {
-	s1: nil,
-	s2: []string{"a"},
+	s1:   nil,
+	s2:   []string{"a"},
 	want: -1,
 }, {
-	s1: []string{"a"},
-	s2: []string{"a"},
+	s1:   []string{"a"},
+	s2:   []string{"a"},
 	want: 0,
 }, {
-	s1: []string{"b"},
-	s2: []string{"a"},
+	s1:   []string{"b"},
+	s2:   []string{"a"},
 	want: 1,
 }, {
-	s1: []string{"a"},
-	s2: []string{"b"},
+	s1:   []string{"a"},
+	s2:   []string{"b"},
 	want: -1,
 }, {
-	s1: []string{"a", "b"},
-	s2: []string{"a"},
+	s1:   []string{"a", "b"},
+	s2:   []string{"a"},
 	want: 1,
 }, {
-	s1: []string{"a"},
-	s2: []string{"a", "b"},
+	s1:   []string{"a"},
+	s2:   []string{"a", "b"},
 	want: -1,
 }}
 
@@ -48,4 +49,3 @@ func TestCompare(t *testing.T) {
 		})
 	}
 }
-

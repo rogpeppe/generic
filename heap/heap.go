@@ -60,7 +60,7 @@ func (h *Heap[E]) Init() {
 func (h *Heap[E]) Push(x E) {
 	h.Items = append(h.Items, x)
 	if h.setIndex != nil {
-		index := len(h.Items)-1
+		index := len(h.Items) - 1
 		h.setIndex(&h.Items[index], index)
 	}
 	h.up(len(h.Items) - 1)
