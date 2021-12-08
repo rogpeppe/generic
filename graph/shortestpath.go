@@ -1,9 +1,6 @@
 package graph
 
-type Graph[Node comparable, Edge any] interface {
-	Edges(n Node) []Edge
-	Nodes(e Edge) (from, to Node)
-}
+import "github.com/rogpeppe/generic/heap"
 
 // item holds an item in the node fringe being calculated by
 // ShortestPath. We might normally declare this inside ShortestPath
@@ -16,8 +13,11 @@ type item[Node, Edge any] struct {
 	edge  Edge
 }
 
+// ShortestPath returns the shortest path from -> to in the graph g
+// using Dijkstra's algorithm. The returned slice holds all the edges
+// leading from the source to the destination.
 func ShortestPath[Node comparable, Edge any](g Graph[Node, Edge], from, to Node) []Edge {
-	h := NewHeap([]*item[Node, Edge]{{
+	h := heap.New([]*item[Node, Edge]{{
 		n:     from,
 		dist:  0,
 		index: 0,
@@ -39,7 +39,7 @@ func ShortestPath[Node comparable, Edge any](g Graph[Node, Edge], from, to Node)
 			if edgeFrom != nearest.n {
 				continue
 			}
-			dist := nearest.dist + 1 // Could use e.Length() instead of 1.
+			dist := nearest.dist + 1 // Could use e.Length() instead of 1 if edges had lengths.
 			toItem, ok := nodes[edgeTo]
 			if !ok {
 				it := &item[Node, Edge]{
@@ -68,5 +68,12 @@ func ShortestPath[Node comparable, Edge any](g Graph[Node, Edge], from, to Node)
 		}
 		found = nodes[edgeFrom]
 	}
+	reverse(edges)
 	return edges
+}
+
+func reverse[T any](s []T) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
 }

@@ -1,12 +1,16 @@
-package graph
+// Copyright 2012 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package heap
 
 import (
-	"testing"
 	"math/rand"
+	"testing"
 )
 
 func newIntHeap(items []int) *Heap[int] {
-	return NewHeap(items, func(a, b int) bool {
+	return New(items, func(a, b int) bool {
 		return a < b
 	}, nil)
 }

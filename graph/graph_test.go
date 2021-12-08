@@ -25,8 +25,8 @@ var graphTests = []graphTest{{
 	from: 0,
 	to:   5,
 	want: [][2]int{
-		{1, 5},
 		{0, 1},
+		{1, 5},
 	},
 }, {
 	arcs: [][2]int{
@@ -42,10 +42,10 @@ var graphTests = []graphTest{{
 	from: 7,
 	to:   5,
 	want: [][2]int{
-		{4, 5},
-		{3, 4},
-		{0, 3},
 		{7, 0},
+		{0, 3},
+		{3, 4},
+		{4, 5},
 	},
 }}
 
@@ -60,40 +60,20 @@ func TestShortestPath(t *testing.T) {
 func testShortestPath(t *testing.T, test graphTest) {
 	g := newGraph(test.arcs)
 	// Note: the results are in reverse order.
-	path := ShortestPath(Graph[int, int](g), test.from, test.to)
+	path := ShortestPath(g, test.from, test.to)
 	var got [][2]int
 	for _, e := range path {
-		got = append(got, g.edges[e])
+		got = append(got, e)
 	}
 	if !reflect.DeepEqual(got, test.want) {
 		t.Fatalf("unexpected result; got %#v want %#v", got, test.want)
 	}
 }
 
-func newGraph(edges [][2]int) *graph {
-	nodes := make(map[int][]int)
-	for i, e := range edges {
-		nodes[e[0]] = append(nodes[e[0]], i)
+func newGraph(edges [][2]int) Graph[int, [2]int] {
+	var g Simple[int]
+	for _, e := range edges {
+		g.AddEdge(e[0], e[1])
 	}
-	return &graph{
-		edges: edges,
-		nodes: nodes,
-	}
-}
-
-type graph struct {
-	edges [][2]int
-	nodes map[int][]int
-}
-
-func (g *graph) Edges(n int) []int {
-	return g.nodes[n]
-}
-
-func (g *graph) Nodes(e int) (from, to int) {
-	if e < 0 || e >= len(g.edges) {
-		panic(fmt.Errorf("unknown edge id %d", e))
-	}
-	arc := g.edges[e]
-	return arc[0], arc[1]
+	return &g
 }
