@@ -79,6 +79,7 @@ func (g *Caller[V, R]) DoChan(v V, call func(vs ...V) ([]R, error)) <-chan Resul
 // reached, additional Do calls will accumulate argument values into
 // a slice and use the same call function, which should return
 // a slice with the results in corresponding elements to the arguments.
+//
 func (g *Caller[V, R]) Do(v V, call func(vs ...V) ([]R, error)) (R, error) {
 	r := <-g.DoChan(v, call)
 	return r.Val, r.Err
