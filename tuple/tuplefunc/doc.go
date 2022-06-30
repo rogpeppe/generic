@@ -9,7 +9,7 @@
 //
 // The names of most functions in this package match the following regular expression:
 //
-// 	ToC?A?R?E?_[0-9]+_[0-9]+
+// 	ToC?A?R?E?_[0-9]+(_[0-9]+)?
 //
 // Each optional letter represents one aspect of the function that's being converted to.
 //
@@ -18,8 +18,15 @@
 // 	R - return parameter
 // 	E - error return
 //
-// The first number is the number of argument parameters (not including context.Context for a C function);
-// the second number is the number of return parameters (not including error for an E function).
+// When there are both argument and return parameters (both A and R are present), the first number holds the
+// number of argument parameters (not including context.Context for a C function)
+// and the second holds the number of return parameters (not including error for an E function).
+//
+// For a function form that can never include argument parameters (no A is present), there's
+// only a single number holding the number of return parameters.
+//
+// For a function form that can never include return parameters (no R is present), there's
+// only a single number holding the number of argument parameters.
 //
 // So, for example:
 //
@@ -41,4 +48,17 @@
 //
 // 	func(tuple.T2[context.Context, A]) tuple.T4[R0, R1, R2, error]
 //
+//
+// Another example:
+//
+//	ToA_2
+//
+// converts from (for some types A0, A1)
+//
+//
+//	func(A0, A1)
+//
+// to:
+//
+//	func(tuple.T2[A0, A1])
 package tuplefunc

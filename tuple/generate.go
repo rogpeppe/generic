@@ -58,6 +58,7 @@ func main() {
 	generateTupleFuncCode()
 	code, err = format.Source(buf.Bytes())
 	if err != nil {
+		fmt.Printf("%s", buf.Bytes())
 		fmt.Fprintf(os.Stderr, "cannot format code: %v\n", err)
 		os.Exit(1)
 	}
@@ -199,7 +200,7 @@ func generateAFunc(a, r int) {
 		// No need - it's already in the correct form.
 		return
 	}
-	name := fmt.Sprintf("ToA_%d_%d", a, r)
+	name := fmt.Sprintf("ToA_%d", a)
 	P("// %s returns a single-argument function that calls f.\n", name)
 	P("func %s%s(f func(%s)) func(%s) {\n",
 		name,
@@ -223,7 +224,7 @@ func generateRFunc(a, r int) {
 		// No need - it's already in the correct form.
 		return
 	}
-	name := fmt.Sprintf("ToR_%d_%d", a, r)
+	name := fmt.Sprintf("ToR_%d", r)
 	P("// %s returns a single-return function that calls f.\n", name)
 	P("func %s%s(f func() %s) func() %s {\n",
 		name,

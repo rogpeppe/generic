@@ -32,86 +32,86 @@ func WithErrorAR[A, R any](f func(A) R) func(A) (R, error) {
 	}
 }
 
-// ToA_0_0 returns a single-argument function that calls f.
-func ToA_0_0(f func()) func(tuple.T0) {
+// ToA_0 returns a single-argument function that calls f.
+func ToA_0(f func()) func(tuple.T0) {
 	return func(a tuple.T0) {
 		f()
 	}
 }
 
-// ToA_2_0 returns a single-argument function that calls f.
-func ToA_2_0[A0, A1 any](f func(a0 A0, a1 A1)) func(tuple.T2[A0, A1]) {
+// ToA_2 returns a single-argument function that calls f.
+func ToA_2[A0, A1 any](f func(a0 A0, a1 A1)) func(tuple.T2[A0, A1]) {
 	return func(a tuple.T2[A0, A1]) {
 		f(a.T())
 	}
 }
 
-// ToA_3_0 returns a single-argument function that calls f.
-func ToA_3_0[A0, A1, A2 any](f func(a0 A0, a1 A1, a2 A2)) func(tuple.T3[A0, A1, A2]) {
+// ToA_3 returns a single-argument function that calls f.
+func ToA_3[A0, A1, A2 any](f func(a0 A0, a1 A1, a2 A2)) func(tuple.T3[A0, A1, A2]) {
 	return func(a tuple.T3[A0, A1, A2]) {
 		f(a.T())
 	}
 }
 
-// ToA_4_0 returns a single-argument function that calls f.
-func ToA_4_0[A0, A1, A2, A3 any](f func(a0 A0, a1 A1, a2 A2, a3 A3)) func(tuple.T4[A0, A1, A2, A3]) {
+// ToA_4 returns a single-argument function that calls f.
+func ToA_4[A0, A1, A2, A3 any](f func(a0 A0, a1 A1, a2 A2, a3 A3)) func(tuple.T4[A0, A1, A2, A3]) {
 	return func(a tuple.T4[A0, A1, A2, A3]) {
 		f(a.T())
 	}
 }
 
-// ToA_5_0 returns a single-argument function that calls f.
-func ToA_5_0[A0, A1, A2, A3, A4 any](f func(a0 A0, a1 A1, a2 A2, a3 A3, a4 A4)) func(tuple.T5[A0, A1, A2, A3, A4]) {
+// ToA_5 returns a single-argument function that calls f.
+func ToA_5[A0, A1, A2, A3, A4 any](f func(a0 A0, a1 A1, a2 A2, a3 A3, a4 A4)) func(tuple.T5[A0, A1, A2, A3, A4]) {
 	return func(a tuple.T5[A0, A1, A2, A3, A4]) {
 		f(a.T())
 	}
 }
 
-// ToA_6_0 returns a single-argument function that calls f.
-func ToA_6_0[A0, A1, A2, A3, A4, A5 any](f func(a0 A0, a1 A1, a2 A2, a3 A3, a4 A4, a5 A5)) func(tuple.T6[A0, A1, A2, A3, A4, A5]) {
+// ToA_6 returns a single-argument function that calls f.
+func ToA_6[A0, A1, A2, A3, A4, A5 any](f func(a0 A0, a1 A1, a2 A2, a3 A3, a4 A4, a5 A5)) func(tuple.T6[A0, A1, A2, A3, A4, A5]) {
 	return func(a tuple.T6[A0, A1, A2, A3, A4, A5]) {
 		f(a.T())
 	}
 }
 
-// ToR_0_0 returns a single-return function that calls f.
-func ToR_0_0(f func()) func() tuple.T0 {
+// ToR_0 returns a single-return function that calls f.
+func ToR_0(f func()) func() tuple.T0 {
 	return func() tuple.T0 {
 		f()
 		return struct{}{}
 	}
 }
 
-// ToR_0_2 returns a single-return function that calls f.
-func ToR_0_2[R0, R1 any](f func() (R0, R1)) func() tuple.T2[R0, R1] {
+// ToR_2 returns a single-return function that calls f.
+func ToR_2[R0, R1 any](f func() (R0, R1)) func() tuple.T2[R0, R1] {
 	return func() tuple.T2[R0, R1] {
 		return tuple.MkT2(f())
 	}
 }
 
-// ToR_0_3 returns a single-return function that calls f.
-func ToR_0_3[R0, R1, R2 any](f func() (R0, R1, R2)) func() tuple.T3[R0, R1, R2] {
+// ToR_3 returns a single-return function that calls f.
+func ToR_3[R0, R1, R2 any](f func() (R0, R1, R2)) func() tuple.T3[R0, R1, R2] {
 	return func() tuple.T3[R0, R1, R2] {
 		return tuple.MkT3(f())
 	}
 }
 
-// ToR_0_4 returns a single-return function that calls f.
-func ToR_0_4[R0, R1, R2, R3 any](f func() (R0, R1, R2, R3)) func() tuple.T4[R0, R1, R2, R3] {
+// ToR_4 returns a single-return function that calls f.
+func ToR_4[R0, R1, R2, R3 any](f func() (R0, R1, R2, R3)) func() tuple.T4[R0, R1, R2, R3] {
 	return func() tuple.T4[R0, R1, R2, R3] {
 		return tuple.MkT4(f())
 	}
 }
 
-// ToR_0_5 returns a single-return function that calls f.
-func ToR_0_5[R0, R1, R2, R3, R4 any](f func() (R0, R1, R2, R3, R4)) func() tuple.T5[R0, R1, R2, R3, R4] {
+// ToR_5 returns a single-return function that calls f.
+func ToR_5[R0, R1, R2, R3, R4 any](f func() (R0, R1, R2, R3, R4)) func() tuple.T5[R0, R1, R2, R3, R4] {
 	return func() tuple.T5[R0, R1, R2, R3, R4] {
 		return tuple.MkT5(f())
 	}
 }
 
-// ToR_0_6 returns a single-return function that calls f.
-func ToR_0_6[R0, R1, R2, R3, R4, R5 any](f func() (R0, R1, R2, R3, R4, R5)) func() tuple.T6[R0, R1, R2, R3, R4, R5] {
+// ToR_6 returns a single-return function that calls f.
+func ToR_6[R0, R1, R2, R3, R4, R5 any](f func() (R0, R1, R2, R3, R4, R5)) func() tuple.T6[R0, R1, R2, R3, R4, R5] {
 	return func() tuple.T6[R0, R1, R2, R3, R4, R5] {
 		return tuple.MkT6(f())
 	}
