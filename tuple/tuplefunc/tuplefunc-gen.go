@@ -467,43 +467,43 @@ func ToAR_6_6[A0, A1, A2, A3, A4, A5, R0, R1, R2, R3, R4, R5 any](f func(a0 A0, 
 	}
 }
 
-// ToAE_0_0 returns a single-argument function that calls f.
-func ToAE_0_0(f func() error) func(tuple.T0) error {
+// ToAE_0 returns a single-argument function that calls f.
+func ToAE_0(f func() error) func(tuple.T0) error {
 	return func(a tuple.T0) error {
 		return f()
 	}
 }
 
-// ToAE_2_0 returns a single-argument function that calls f.
-func ToAE_2_0[A0, A1 any](f func(a0 A0, a1 A1) error) func(tuple.T2[A0, A1]) error {
+// ToAE_2 returns a single-argument function that calls f.
+func ToAE_2[A0, A1 any](f func(a0 A0, a1 A1) error) func(tuple.T2[A0, A1]) error {
 	return func(a tuple.T2[A0, A1]) error {
 		return f(a.T())
 	}
 }
 
-// ToAE_3_0 returns a single-argument function that calls f.
-func ToAE_3_0[A0, A1, A2 any](f func(a0 A0, a1 A1, a2 A2) error) func(tuple.T3[A0, A1, A2]) error {
+// ToAE_3 returns a single-argument function that calls f.
+func ToAE_3[A0, A1, A2 any](f func(a0 A0, a1 A1, a2 A2) error) func(tuple.T3[A0, A1, A2]) error {
 	return func(a tuple.T3[A0, A1, A2]) error {
 		return f(a.T())
 	}
 }
 
-// ToAE_4_0 returns a single-argument function that calls f.
-func ToAE_4_0[A0, A1, A2, A3 any](f func(a0 A0, a1 A1, a2 A2, a3 A3) error) func(tuple.T4[A0, A1, A2, A3]) error {
+// ToAE_4 returns a single-argument function that calls f.
+func ToAE_4[A0, A1, A2, A3 any](f func(a0 A0, a1 A1, a2 A2, a3 A3) error) func(tuple.T4[A0, A1, A2, A3]) error {
 	return func(a tuple.T4[A0, A1, A2, A3]) error {
 		return f(a.T())
 	}
 }
 
-// ToAE_5_0 returns a single-argument function that calls f.
-func ToAE_5_0[A0, A1, A2, A3, A4 any](f func(a0 A0, a1 A1, a2 A2, a3 A3, a4 A4) error) func(tuple.T5[A0, A1, A2, A3, A4]) error {
+// ToAE_5 returns a single-argument function that calls f.
+func ToAE_5[A0, A1, A2, A3, A4 any](f func(a0 A0, a1 A1, a2 A2, a3 A3, a4 A4) error) func(tuple.T5[A0, A1, A2, A3, A4]) error {
 	return func(a tuple.T5[A0, A1, A2, A3, A4]) error {
 		return f(a.T())
 	}
 }
 
-// ToAE_6_0 returns a single-argument function that calls f.
-func ToAE_6_0[A0, A1, A2, A3, A4, A5 any](f func(a0 A0, a1 A1, a2 A2, a3 A3, a4 A4, a5 A5) error) func(tuple.T6[A0, A1, A2, A3, A4, A5]) error {
+// ToAE_6 returns a single-argument function that calls f.
+func ToAE_6[A0, A1, A2, A3, A4, A5 any](f func(a0 A0, a1 A1, a2 A2, a3 A3, a4 A4, a5 A5) error) func(tuple.T6[A0, A1, A2, A3, A4, A5]) error {
 	return func(a tuple.T6[A0, A1, A2, A3, A4, A5]) error {
 		return f(a.T())
 	}
@@ -894,48 +894,48 @@ func ToARE_6_6[A0, A1, A2, A3, A4, A5, R0, R1, R2, R3, R4, R5 any](f func(a0 A0,
 	}
 }
 
-// ToRE_0_0 returns a single-return-with-error function that calls f.
-func ToRE_0_0(f func() error) func() (tuple.T0, error) {
+// ToRE_0 returns a single-return-with-error function that calls f.
+func ToRE_0(f func() error) func() (tuple.T0, error) {
 	return func() (tuple.T0, error) {
 		err := f()
 		return struct{}{}, err
 	}
 }
 
-// ToRE_0_2 returns a single-return-with-error function that calls f.
-func ToRE_0_2[R0, R1 any](f func() (R0, R1, error)) func() (tuple.T2[R0, R1], error) {
+// ToRE_2 returns a single-return-with-error function that calls f.
+func ToRE_2[R0, R1 any](f func() (R0, R1, error)) func() (tuple.T2[R0, R1], error) {
 	return func() (tuple.T2[R0, R1], error) {
 		r0, r1, err := f()
 		return tuple.MkT2(r0, r1), err
 	}
 }
 
-// ToRE_0_3 returns a single-return-with-error function that calls f.
-func ToRE_0_3[R0, R1, R2 any](f func() (R0, R1, R2, error)) func() (tuple.T3[R0, R1, R2], error) {
+// ToRE_3 returns a single-return-with-error function that calls f.
+func ToRE_3[R0, R1, R2 any](f func() (R0, R1, R2, error)) func() (tuple.T3[R0, R1, R2], error) {
 	return func() (tuple.T3[R0, R1, R2], error) {
 		r0, r1, r2, err := f()
 		return tuple.MkT3(r0, r1, r2), err
 	}
 }
 
-// ToRE_0_4 returns a single-return-with-error function that calls f.
-func ToRE_0_4[R0, R1, R2, R3 any](f func() (R0, R1, R2, R3, error)) func() (tuple.T4[R0, R1, R2, R3], error) {
+// ToRE_4 returns a single-return-with-error function that calls f.
+func ToRE_4[R0, R1, R2, R3 any](f func() (R0, R1, R2, R3, error)) func() (tuple.T4[R0, R1, R2, R3], error) {
 	return func() (tuple.T4[R0, R1, R2, R3], error) {
 		r0, r1, r2, r3, err := f()
 		return tuple.MkT4(r0, r1, r2, r3), err
 	}
 }
 
-// ToRE_0_5 returns a single-return-with-error function that calls f.
-func ToRE_0_5[R0, R1, R2, R3, R4 any](f func() (R0, R1, R2, R3, R4, error)) func() (tuple.T5[R0, R1, R2, R3, R4], error) {
+// ToRE_5 returns a single-return-with-error function that calls f.
+func ToRE_5[R0, R1, R2, R3, R4 any](f func() (R0, R1, R2, R3, R4, error)) func() (tuple.T5[R0, R1, R2, R3, R4], error) {
 	return func() (tuple.T5[R0, R1, R2, R3, R4], error) {
 		r0, r1, r2, r3, r4, err := f()
 		return tuple.MkT5(r0, r1, r2, r3, r4), err
 	}
 }
 
-// ToRE_0_6 returns a single-return-with-error function that calls f.
-func ToRE_0_6[R0, R1, R2, R3, R4, R5 any](f func() (R0, R1, R2, R3, R4, R5, error)) func() (tuple.T6[R0, R1, R2, R3, R4, R5], error) {
+// ToRE_6 returns a single-return-with-error function that calls f.
+func ToRE_6[R0, R1, R2, R3, R4, R5 any](f func() (R0, R1, R2, R3, R4, R5, error)) func() (tuple.T6[R0, R1, R2, R3, R4, R5], error) {
 	return func() (tuple.T6[R0, R1, R2, R3, R4, R5], error) {
 		r0, r1, r2, r3, r4, r5, err := f()
 		return tuple.MkT6(r0, r1, r2, r3, r4, r5), err

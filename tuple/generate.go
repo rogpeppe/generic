@@ -101,7 +101,6 @@ import (
 	generate(generateREFunc)
 	generate(generateCAREFunc)
 	// TODO
-	//	ARE		argument and return with error
 	//	CAE		context with argument; only error return
 	//	CRE		context only; return with error
 	//	CA		context with argument; no return
@@ -256,7 +255,7 @@ func generateAEFunc(a, r int) {
 		// No need - it's already in the correct form.
 		return
 	}
-	name := fmt.Sprintf("ToAE_%d_%d", a, r)
+	name := fmt.Sprintf("ToAE_%d", a)
 	P("// %s returns a single-argument function that calls f.\n", name)
 	P("func %s%s(f func(%s) error) func(%s) error {\n",
 		name,
@@ -310,7 +309,7 @@ func generateREFunc(a, r int) {
 		// No need - it's already in the correct form.
 		return
 	}
-	name := fmt.Sprintf("ToRE_%d_%d", a, r)
+	name := fmt.Sprintf("ToRE_%d", r)
 	P("// %s returns a single-return-with-error function that calls f.\n", name)
 	P("func %s%s(f func() %s) func() (%s, error) {\n",
 		name,
