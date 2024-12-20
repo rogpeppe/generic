@@ -93,13 +93,14 @@ import (
 	P("%s", prelude)
 	P("\n")
 	P("\n")
-	generate(generateAFunc)
-	generate(generateRFunc)
-	generate(generateARFunc)
-	generate(generateAEFunc)
-	generate(generateAREFunc)
-	generate(generateREFunc)
-	generate(generateCAREFunc)
+	generate(generateToAFunc)
+	generate(generateToRFunc)
+	generate(generateToARFunc)
+	generate(generateToAEFunc)
+	generate(generateToAREFunc)
+	generate(generateToREFunc)
+	generate(generateFromREFunc)
+	generate(generateToCAREFunc)
 	// TODO
 	//	CAE		context with argument; only error return
 	//	CRE		context only; return with error
@@ -162,7 +163,7 @@ func generateTuple(n int) {
 	P("}\n")
 }
 
-func generateARFunc(a, r int) {
+func generateToARFunc(a, r int) {
 	name := fmt.Sprintf("ToAR_%d_%d", a, r)
 	P("// %s returns a single-argument, single-return function that calls f.\n", name)
 	P("func %s%s(f func(%s) %s) func(%s) %s {\n",
@@ -191,7 +192,7 @@ func generateARFunc(a, r int) {
 	P("}\n")
 }
 
-func generateAFunc(a, r int) {
+func generateToAFunc(a, r int) {
 	if r != 0 {
 		return
 	}
@@ -199,6 +200,7 @@ func generateAFunc(a, r int) {
 		// No need - it's already in the correct form.
 		return
 	}
+
 	name := fmt.Sprintf("ToA_%d", a)
 	P("// %s returns a single-argument function that calls f.\n", name)
 	P("func %s%s(f func(%s)) func(%s) {\n",
@@ -213,9 +215,10 @@ func generateAFunc(a, r int) {
 	P("\t\tf(%s)\n", argTuple("a", a))
 	P("\t}\n")
 	P("}\n")
+
 }
 
-func generateRFunc(a, r int) {
+func generateToRFunc(a, r int) {
 	if a != 0 {
 		return
 	}
@@ -247,7 +250,7 @@ func generateRFunc(a, r int) {
 	P("}\n")
 }
 
-func generateAEFunc(a, r int) {
+func generateToAEFunc(a, r int) {
 	if r != 0 {
 		return
 	}
@@ -271,7 +274,7 @@ func generateAEFunc(a, r int) {
 	P("}\n")
 }
 
-func generateAREFunc(a, r int) {
+func generateToAREFunc(a, r int) {
 	name := fmt.Sprintf("ToARE_%d_%d", a, r)
 	P("// %s returns a single-argument, single-return-with-error function that calls f.\n", name)
 	P("func %s%s(f func(%s) %s) func(%s) (%s, error) {\n",
@@ -301,7 +304,7 @@ func generateAREFunc(a, r int) {
 	P("}\n")
 }
 
-func generateREFunc(a, r int) {
+func generateToREFunc(a, r int) {
 	if a != 0 {
 		return
 	}
@@ -335,7 +338,42 @@ func generateREFunc(a, r int) {
 	P("}\n")
 }
 
-func generateCAREFunc(a, r int) {
+func generateFromREFunc(a, r int) {
+	if a != 0 {
+		return
+	}
+	if r == 1 {
+		// No need - it's already in the correct form.
+		return
+	}
+	name := fmt.Sprintf("FromRE_%d", r)
+	P("// %s returns a function that returns %d parameters and an error that calls f.\n", name, r)
+	P("func %s%s(f func() (%s, error)) func() %s {\n",
+		name,
+		typeParams(a, r),
+		tuple("R", r),
+		retTypes("R", r, true),
+	)
+	P("\treturn func() %s {\n",
+		retTypes("R", r, true),
+	)
+	expr := "f()"
+	switch {
+	case r == 0:
+		P("\t\t_, err := %s\n", expr)
+		P("\t\treturn err\n")
+	case r == 1:
+		P("\t\treturn %s\n", expr)
+	default:
+		P("\t\tt, err := %s\n", expr)
+		P("\t\t%s := t.T()\n", commaSep("r", r))
+		P("\t\treturn %s, err\n", commaSep("r", r))
+	}
+	P("\t}\n")
+	P("}\n")
+}
+
+func generateToCAREFunc(a, r int) {
 	name := fmt.Sprintf("ToCARE_%d_%d", a, r)
 	P("// %s returns a context-with-single argument, single-return-with-error function that calls f.\n", name)
 	P("func %s%s(f func(%s) %s) func(context.Context, %s) (%s, error) {\n",

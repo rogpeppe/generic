@@ -942,6 +942,59 @@ func ToRE_6[R0, R1, R2, R3, R4, R5 any](f func() (R0, R1, R2, R3, R4, R5, error)
 	}
 }
 
+// FromRE_0 returns a function that returns 0 parameters and an error that calls f.
+func FromRE_0(f func() (tuple.T0, error)) func() error {
+	return func() error {
+		_, err := f()
+		return err
+	}
+}
+
+// FromRE_2 returns a function that returns 2 parameters and an error that calls f.
+func FromRE_2[R0, R1 any](f func() (tuple.T2[R0, R1], error)) func() (R0, R1, error) {
+	return func() (R0, R1, error) {
+		t, err := f()
+		r0, r1 := t.T()
+		return r0, r1, err
+	}
+}
+
+// FromRE_3 returns a function that returns 3 parameters and an error that calls f.
+func FromRE_3[R0, R1, R2 any](f func() (tuple.T3[R0, R1, R2], error)) func() (R0, R1, R2, error) {
+	return func() (R0, R1, R2, error) {
+		t, err := f()
+		r0, r1, r2 := t.T()
+		return r0, r1, r2, err
+	}
+}
+
+// FromRE_4 returns a function that returns 4 parameters and an error that calls f.
+func FromRE_4[R0, R1, R2, R3 any](f func() (tuple.T4[R0, R1, R2, R3], error)) func() (R0, R1, R2, R3, error) {
+	return func() (R0, R1, R2, R3, error) {
+		t, err := f()
+		r0, r1, r2, r3 := t.T()
+		return r0, r1, r2, r3, err
+	}
+}
+
+// FromRE_5 returns a function that returns 5 parameters and an error that calls f.
+func FromRE_5[R0, R1, R2, R3, R4 any](f func() (tuple.T5[R0, R1, R2, R3, R4], error)) func() (R0, R1, R2, R3, R4, error) {
+	return func() (R0, R1, R2, R3, R4, error) {
+		t, err := f()
+		r0, r1, r2, r3, r4 := t.T()
+		return r0, r1, r2, r3, r4, err
+	}
+}
+
+// FromRE_6 returns a function that returns 6 parameters and an error that calls f.
+func FromRE_6[R0, R1, R2, R3, R4, R5 any](f func() (tuple.T6[R0, R1, R2, R3, R4, R5], error)) func() (R0, R1, R2, R3, R4, R5, error) {
+	return func() (R0, R1, R2, R3, R4, R5, error) {
+		t, err := f()
+		r0, r1, r2, r3, r4, r5 := t.T()
+		return r0, r1, r2, r3, r4, r5, err
+	}
+}
+
 // ToCARE_0_0 returns a context-with-single argument, single-return-with-error function that calls f.
 func ToCARE_0_0(f func(ctx context.Context) error) func(context.Context, tuple.T0) (tuple.T0, error) {
 	return func(ctx context.Context, a tuple.T0) (tuple.T0, error) {
