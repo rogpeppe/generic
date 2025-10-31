@@ -2,11 +2,10 @@ package watcher
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
-	"testing"
-
-	qt "github.com/frankban/quicktest"
+	"github.com/go-quicktest/qt"
 )
 
 func ExampleWatcher_Next() {
@@ -36,41 +35,37 @@ func ExampleWatcher_Next() {
 }
 
 func TestValueGetSet(t *testing.T) {
-	c := qt.New(t)
 	var v Value[string]
 	expected := "12345"
 	v.Set(expected)
 	got := v.Get()
-	c.Assert(got, qt.Equals, expected)
-	c.Assert(v.Closed(), qt.IsFalse)
+	qt.Assert(t, qt.Equals(got, expected))
+	qt.Assert(t, qt.IsFalse(v.Closed()))
 }
 
 func TestValueInitial(t *testing.T) {
-	c := qt.New(t)
 	expected := "12345"
 	v := NewValue(expected)
 	got := v.Get()
-	c.Assert(got, qt.Equals, expected)
-	c.Assert(v.Closed(), qt.IsFalse)
+	qt.Assert(t, qt.Equals(got, expected))
+	qt.Assert(t, qt.IsFalse(v.Closed()))
 }
 
 func TestValueClose(t *testing.T) {
-	c := qt.New(t)
 	expected := "12345"
 	v := NewValue(expected)
-	c.Assert(v.Close(), qt.IsNil)
+	qt.Assert(t, qt.IsNil(v.Close()))
 
 	isClosed := v.Closed()
-	c.Assert(isClosed, qt.IsTrue)
+	qt.Assert(t, qt.IsTrue(isClosed))
 	got := v.Get()
-	c.Assert(got, qt.Equals, "")
+	qt.Assert(t, qt.Equals(got, ""))
 
 	// test that we can close multiple times without a problem
-	c.Assert(v.Close(), qt.IsNil)
+	qt.Assert(t, qt.IsNil(v.Close()))
 }
 
 func TestWatcher(t *testing.T) {
-	c := qt.New(t)
 	vals := []string{"one", "two", "three"}
 
 	// blocking on the channel forces the scheduler to let the other goroutine
@@ -89,26 +84,25 @@ func TestWatcher(t *testing.T) {
 	}()
 
 	w := v.Watch()
-	c.Assert(w.Next(), qt.IsTrue)
-	c.Assert(w.Value(), qt.Equals, vals[0])
+	qt.Assert(t, qt.IsTrue(w.Next()))
+	qt.Assert(t, qt.Equals(w.Value(), vals[0]))
 
 	// test that we can get the same value multiple times
-	c.Assert(w.Value(), qt.Equals, vals[0])
+	qt.Assert(t, qt.Equals(w.Value(), vals[0]))
 	<-ch
 
 	// now try skipping a value by calling next without getting the value
-	c.Assert(w.Next(), qt.IsTrue)
+	qt.Assert(t, qt.IsTrue(w.Next()))
 	<-ch
 
-	c.Assert(w.Next(), qt.IsTrue)
-	c.Assert(w.Value(), qt.Equals, vals[2])
+	qt.Assert(t, qt.IsTrue(w.Next()))
+	qt.Assert(t, qt.Equals(w.Value(), vals[2]))
 	<-ch
 
-	c.Assert(w.Next(), qt.IsFalse)
+	qt.Assert(t, qt.IsFalse(w.Next()))
 }
 
 func TestDoubleSet(t *testing.T) {
-	c := qt.New(t)
 	vals := []string{"one", "two", "three"}
 
 	// blocking on the channel forces the scheduler to let the other goroutine
@@ -129,18 +123,17 @@ func TestDoubleSet(t *testing.T) {
 	}()
 
 	w := v.Watch()
-	c.Assert(w.Next(), qt.IsTrue)
-	c.Assert(w.Value(), qt.Equals, vals[0])
+	qt.Assert(t, qt.IsTrue(w.Next()))
+	qt.Assert(t, qt.Equals(w.Value(), vals[0]))
 	<-ch
 
 	// since we did two sets before sending on the channel,
 	// we should just get vals[2] here and not get vals[1]
-	c.Assert(w.Next(), qt.IsTrue)
-	c.Assert(w.Value(), qt.Equals, vals[2])
+	qt.Assert(t, qt.IsTrue(w.Next()))
+	qt.Assert(t, qt.Equals(w.Value(), vals[2]))
 }
 
 func TestTwoReceivers(t *testing.T) {
-	c := qt.New(t)
 	vals := []string{"one", "two", "three"}
 
 	// blocking on the channel forces the scheduler to let the other goroutine
@@ -154,11 +147,11 @@ func TestTwoReceivers(t *testing.T) {
 		w := v.Watch()
 		x := 0
 		for w.Next() {
-			c.Assert(w.Value(), qt.Equals, vals[x])
+			qt.Assert(t, qt.Equals(w.Value(), vals[x]))
 			x++
 			<-ch
 		}
-		c.Assert(x, qt.Equals, len(vals))
+		qt.Assert(t, qt.Equals(x, len(vals)))
 		<-ch
 	}
 
@@ -177,7 +170,6 @@ func TestTwoReceivers(t *testing.T) {
 }
 
 func TestCloseWatcher(t *testing.T) {
-	c := qt.New(t)
 	vals := []string{"one", "two", "three"}
 
 	// blocking on the channel forces the scheduler to let the other goroutine
@@ -191,12 +183,12 @@ func TestCloseWatcher(t *testing.T) {
 	go func() {
 		x := 0
 		for w.Next() {
-			c.Assert(w.Value(), qt.Equals, vals[x])
+			qt.Assert(t, qt.Equals(w.Value(), vals[x]))
 			x++
 			<-ch
 		}
 		// the value will only get set once before the watcher is closed
-		c.Assert(x, qt.Equals, 1)
+		qt.Assert(t, qt.Equals(x, 1))
 		<-ch
 	}()
 
@@ -206,11 +198,10 @@ func TestCloseWatcher(t *testing.T) {
 	ch <- true
 
 	// prove the value is not closed, even though the watcher is
-	c.Assert(v.Closed(), qt.IsFalse)
+	qt.Assert(t, qt.IsFalse(v.Closed()))
 }
 
 func TestWatchZeroValue(t *testing.T) {
-	c := qt.New(t)
 	var v Value[struct{}]
 	ch := make(chan bool)
 	go func() {
@@ -220,11 +211,10 @@ func TestWatchZeroValue(t *testing.T) {
 	}()
 	<-ch
 	v.Set(struct{}{})
-	c.Assert(<-ch, qt.IsTrue)
+	qt.Assert(t, qt.IsTrue(<-ch))
 }
 
 func TestUpdateIfUnequal(t *testing.T) {
-	c := qt.New(t)
 	v := WithUpdater[string](IfUnequal[string])
 	go func() {
 		v.Set("first")
@@ -239,5 +229,5 @@ func TestUpdateIfUnequal(t *testing.T) {
 	for w := v.Watch(); w.Next(); {
 		got = append(got, w.Value())
 	}
-	c.Assert(got, qt.DeepEquals, []string{"first", "second"})
+	qt.Assert(t, qt.DeepEquals(got, []string{"first", "second"}))
 }
