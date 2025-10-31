@@ -34,7 +34,8 @@ func ShortestPath[Node comparable, Edge any](g Graph[Node, Edge], from, to Node)
 			found = nearest
 			break
 		}
-		for _, e := range g.Edges(nearest.n) {
+		edges, _ := g.EdgesFrom(nearest.n)
+		for _, e := range edges {
 			edgeFrom, edgeTo := g.Nodes(e)
 			if edgeFrom != nearest.n {
 				continue

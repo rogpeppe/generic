@@ -4,7 +4,11 @@
 
 // This code is derived from the code in the v.io/x/lib/toposort package.
 
-package graph
+package topo
+
+import (
+	"github.com/rogpeppe/generic/graph"
+)
 
 // TopoSort returns the topologically sorted nodes, along with some of the cycles
 // (if any) that were encountered.  You're guaranteed that len(cycles)==0 iff
@@ -17,14 +21,14 @@ package graph
 //
 // Sort is deterministic; given the same sequence of inputs it always returns
 // the same output, even if the inputs are only partially ordered.
-func TopoSort[Node comparable, Edge any](g Graph[Node, Edge]) (sorted []Node, cycles [][]Node) {
+func TopoSort[Node comparable, Edge any](g graph.EnumerableGraph[Node, Edge]) (sorted []Node, cycles [][]Node) {
 	// The strategy is the standard simple approach of performing DFS on the
 	// graph.  Details are outlined in the above wikipedia article.
 	v := &visitor[Node, Edge]{
 		g:    g,
 		done: make(map[Node]bool),
 	}
-	for _, n := range g.AllNodes() {
+	for n := range g.AllNodes() {
 		v.visiting = make(map[Node]bool)
 		cycles = append(cycles, v.visit(n)...)
 	}
@@ -32,7 +36,7 @@ func TopoSort[Node comparable, Edge any](g Graph[Node, Edge]) (sorted []Node, cy
 }
 
 type visitor[Node comparable, Edge any] struct {
-	g        Graph[Node, Edge]
+	g        graph.Graph[Node, Edge]
 	done     map[Node]bool
 	visiting map[Node]bool
 	sorted   []Node
@@ -55,7 +59,8 @@ func (v *visitor[Node, Edge]) visit(n Node) (cycles [][]Node) {
 		return [][]Node{{n}}
 	}
 	v.visiting[n] = true
-	for _, edge := range v.g.Edges(n) {
+	edges, _ := v.g.EdgesFrom(n)
+	for _, edge := range edges {
 		_, child := v.g.Nodes(edge)
 		cycles = append(cycles, v.visit(child)...)
 	}

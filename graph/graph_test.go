@@ -1,7 +1,10 @@
 package graph
 
 import (
+	"cmp"
 	"fmt"
+	"iter"
+	"maps"
 	"reflect"
 	"testing"
 )
@@ -76,4 +79,73 @@ func newGraph(edges [][2]int) Graph[int, [2]int] {
 		g.AddEdge(e[0], e[1])
 	}
 	return &g
+}
+
+type intGraph map[int][]int
+
+func (g intGraph) CmpNode(n0, n1 int) int {
+	return cmp.Compare(n0, n1)
+}
+
+func (g intGraph) AllNodes() iter.Seq[int] {
+	return maps.Keys(g)
+}
+
+func (g intGraph) EdgesFrom(n int) ([][2]int, bool) {
+	to, ok := g[n]
+	if !ok {
+		return nil, false
+	}
+	edges := make([][2]int, len(to))
+	for i, e := range to {
+		edges[i] = [2]int{n, e}
+	}
+	return edges, true
+}
+
+func (g intGraph) Nodes(e [2]int) (from, to int) {
+	return e[0], e[1]
+}
+
+func TestIntGraph(t *testing.T) {
+	g := intGraph{
+		0: {1, 2},
+		1: {5},
+		2: {0, 4, 5},
+		4: {},
+		5: {},
+	}
+	fmt.Println(ShortestPath[int, [2]int](g, 0, 4))
+}
+
+type NodeConstraint[Edge any] interface {
+	cmp.Ordered
+	comparable
+	Edges() []Edge
+}
+
+type EdgeConstraint[Node comparable] interface {
+	Nodes() (from, to Node)
+}
+
+func ShortestPathOld[Node NodeConstraint[Edge], Edge EdgeConstraint[Node]](from, to Node) []Edge {
+	return ShortestPath[Node, Edge](constrainedGraph[Node, Edge]{}, from, to)
+}
+
+type constrainedGraph[Node NodeConstraint[Edge], Edge EdgeConstraint[Node]] struct{}
+
+func (g constrainedGraph[Node, Edge]) CmpNode(n0, n1 Node) int {
+	return cmp.Compare(n0, n1)
+}
+
+func (g constrainedGraph[Node, Edge]) EdgesFrom(n Node) ([]Edge, bool) {
+	return n.Edges(), true
+}
+
+func (g constrainedGraph[Node, Edge]) Nodes(e Edge) (from, to Node) {
+	return e.Nodes()
+}
+
+func (g constrainedGraph[Node, Edge]) AllNodes() iter.Seq[Node] {
+	panic("unimplemented")
 }

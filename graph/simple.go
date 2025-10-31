@@ -1,16 +1,19 @@
 package graph
 
+import (
+	"cmp"
+	"iter"
+	"slices"
+)
+
 // Simple implements Graph for a concrete set of comparable nodes.
-type Simple[Node comparable] struct {
+type Simple[Node cmp.Ordered] struct {
 	nodes    map[Node][][2]Node
 	allNodes []Node
 }
 
-// Graph returns g as the Graph interface. This avoids the annoying
-// explicit type conversion needed by the current Go generics
-// implementation. See https://github.com/golang/go/issues/41176.
-func (g *Simple[Node]) Graph() Graph[Node, [2]Node] {
-	return g
+func (g *Simple[Node]) CmpNode(n0, n1 Node) int {
+	return cmp.Compare(n0, n1)
 }
 
 // AddNode adds a node. Typically this is only used to add
@@ -40,15 +43,15 @@ func (g *Simple[Node]) addNode(n Node, edges ...[2]Node) {
 }
 
 // AllNodes implements Graph.AllNodes.
-// Note: the caller should not mutate the returned slice.
-func (g *Simple[Node]) AllNodes() []Node {
-	return g.allNodes
+func (g *Simple[Node]) AllNodes() iter.Seq[Node] {
+	return slices.Values(g.allNodes)
 }
 
 // AllNodes implements Graph.Edges.
 // Note: the caller should not mutate the returned slice.
-func (g *Simple[Node]) Edges(n Node) [][2]Node {
-	return g.nodes[n]
+func (g *Simple[Node]) EdgesFrom(n Node) ([][2]Node, bool) {
+	edges, ok := g.nodes[n]
+	return edges, ok
 }
 
 // AllNodes implements Graph.Nodes.
