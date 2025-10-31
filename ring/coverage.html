@@ -1,0 +1,427 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>ring: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/rogpeppe/generic/ring/buffer.go (87.7%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package ring
+
+import (
+        "fmt"
+        "iter"
+        "math/bits"
+)
+
+// Buffer holds a slice-backed ring buffer. Elements
+// can be added and removed at both the start and
+// the end of the buffer.
+//
+// Elements are indexed from zero (the start)
+// to the end. Pushing elements at the start
+// will implicitly reindex all previous elements.
+//
+// The zero-value is OK to use.
+type Buffer[T any] struct {
+        // buf holds the backing slice. Its capacity
+        // is always a power of two or zero.
+        //
+        // The length of the buffer is used unconventionally.
+        // It is used to hold the start of the data.
+        //
+        // So when the data is contiguous, it's held in
+        //         buf[len(buf):len(buf)+len]
+        // When the data overlaps the end of the buffer,
+        // it's held in
+        //        buf[len(buf):cap(buf)], buf[:len - (cap(buf)-len(buf))]
+        buf []T
+
+        // len holds the number of elements in the buffer.
+        len int
+}
+
+// NewBuffer returns a buffer with at least the specified capacity.
+func NewBuffer[T any](minCap int) *Buffer[T] <span class="cov8" title="1">{
+        var b Buffer[T]
+        b.ensureCap(minCap)
+        return &amp;b
+}</span>
+
+// All returns an iterator over all the values in the buffer.
+func (b *Buffer[T]) All() iter.Seq[T] <span class="cov8" title="1">{
+        return func(yield func(T) bool) </span><span class="cov8" title="1">{
+                s0, s1 := b.slices()
+                for _, x := range s0 </span><span class="cov8" title="1">{
+                        if !yield(x) </span><span class="cov0" title="0">{
+                                return
+                        }</span>
+                }
+                <span class="cov8" title="1">for _, x := range s1 </span><span class="cov0" title="0">{
+                        if !yield(x) </span><span class="cov0" title="0">{
+                                return
+                        }</span>
+                }
+        }
+}
+
+// PeekStart returns the element at the start of the buffer
+// without consuming it. It's equivalent to b.Get(0),
+// and panics if the buffer is empty.
+func (b *Buffer[T]) PeekStart() T <span class="cov8" title="1">{
+        if b.Len() &lt;= 0 </span><span class="cov8" title="1">{
+                panic("PeekStart called on empty buffer")</span>
+        }
+        <span class="cov8" title="1">buf, i0, _ := b.get()
+        return buf[i0]</span>
+}
+
+// PushStart pushes an element to the start of the buffer.
+func (b *Buffer[T]) PushStart(x T) <span class="cov8" title="1">{
+        b.ensureCap(b.Len() + 1)
+
+        buf, i0, _ := b.get()
+        i0 = b.mod(i0 + b.Cap() - 1)
+        buf[i0] = x
+        b.buf = b.buf[:i0]
+        b.len++
+}</span>
+
+// PushEnd adds an element to the end of the buffer.
+func (b *Buffer[T]) PushEnd(x T) <span class="cov8" title="1">{
+        b.ensureCap(b.Len() + 1)
+        buf, _, i1 := b.get()
+        buf[i1] = x
+        b.len++
+}</span>
+
+// PushSliceEnd pushes all the elements of the
+// given slice onto the end of the buffer.
+// It's just like:
+//
+//        for _, x := range src {
+//                b.PushEnd(x)
+//        }
+//
+// but more efficient.
+func (b *Buffer[T]) PushSliceEnd(src []T) <span class="cov8" title="1">{
+        b.ensureCap(b.Len() + len(src))
+        buf, _, i1 := b.get()
+
+        if i1+len(src) &lt;= len(buf) </span><span class="cov8" title="1">{
+                copy(buf[i1:], src)
+        }</span> else<span class="cov0" title="0"> {
+                n := copy(buf[i1:], src)
+                copy(buf, src[n:])
+        }</span>
+        <span class="cov8" title="1">b.len += len(src)</span>
+}
+
+// PushSliceStart pushes all the elements of the
+// given slice onto the end of the buffer.
+// It's just like:
+//
+//        for i := len(src)-1; i&gt;=0; i-- {
+//                b.PushStart(src[i])
+//        }
+//
+// but more efficient.
+func (b *Buffer[T]) PushSliceStart(src []T) <span class="cov8" title="1">{
+        b.ensureCap(b.Len() + len(src))
+        buf, i0, _ := b.get()
+        if i0-len(src) &gt;= 0 </span><span class="cov8" title="1">{
+                // It fits in the space before the start.
+                copy(buf[i0-len(src):i0], src)
+        }</span> else<span class="cov8" title="1"> {
+                n := copy(buf[:i0], src)
+                copy(buf[len(buf)-(len(src)-n):], src[n:])
+        }</span>
+        <span class="cov8" title="1">i0 = b.mod(i0 + len(buf) - len(src))
+        b.buf = b.buf[:i0]
+        b.len += len(src)</span>
+}
+
+// DiscardFromStart discards min(b.Len(), n) elements from
+// the start of the buffer and returns the number actually
+// discarded
+func (b *Buffer[T]) DiscardFromStart(n int) int <span class="cov8" title="1">{
+        n = min(b.Len(), n)
+        if n == 0 </span><span class="cov0" title="0">{
+                return 0
+        }</span>
+        <span class="cov8" title="1">buf, i0, _ := b.get()
+        if i0+n &lt; len(buf) </span><span class="cov8" title="1">{
+                // All elements being discarded are in the
+                // start segment of buf.
+                clear(buf[i0:b.mod(i0+n)])
+        }</span> else<span class="cov0" title="0"> {
+                clear(b.buf[i0:])
+                clear(b.buf[:n-(len(buf)-i0)])
+        }</span>
+        <span class="cov8" title="1">i0 = b.mod(i0 + n)
+        b.buf = b.buf[:i0]
+        b.len -= n
+        return n</span>
+}
+
+// DiscardFromEnd discards min(b.Len(), n) elements from
+// the end of the buffer and returns the number actually
+// discarded
+func (b *Buffer[T]) DiscardFromEnd(n int) int <span class="cov8" title="1">{
+        n = min(b.Len(), n)
+        if n == 0 </span><span class="cov0" title="0">{
+                return 0
+        }</span>
+        <span class="cov8" title="1">buf, _, i1 := b.get()
+        if i1-n &gt;= 0 </span><span class="cov8" title="1">{
+                // All the elements being discarded are in
+                // the end segment of b.buf.
+                clear(buf[i1-n:i1])
+        }</span> else<span class="cov0" title="0"> {
+                clear(buf[:i1])
+                clear(buf[len(buf)-(n-i1):])
+        }</span>
+        <span class="cov8" title="1">b.len -= n
+        return n</span>
+}
+
+// Copy copies min(b.Len(), len(dst)) values into dst
+// from index i in the buffer onwards. It does not affect
+// the size of the buffer. It returns the number of elements
+// actually copied. It panics if i is out of range.
+func (b *Buffer[T]) Copy(dst []T, i int) int <span class="cov8" title="1">{
+        if i &lt; 0 || i &gt; b.Len() </span><span class="cov8" title="1">{
+                panic("Copy with out of range index")</span>
+        }
+        <span class="cov8" title="1">s0, s1 := b.slices()
+        n := 0
+        if i &lt; len(s0) </span><span class="cov8" title="1">{
+                // Start from within s0
+                n = copy(dst, s0[i:])
+                if n == len(s0[i:]) </span><span class="cov8" title="1">{
+                        // We copied all of s0 from index i onwards, now copy s1
+                        n += copy(dst[n:], s1)
+                }</span>
+        } else<span class="cov0" title="0"> {
+                // Start from within s1
+                n = copy(dst, s1[i-len(s0):])
+        }</span>
+        <span class="cov8" title="1">return n</span>
+}
+
+// PeekEnd returns the element at the end of the buffer
+// without consuming it. It's equivalent to b.Get(b.Len()-1).
+func (b *Buffer[T]) PeekEnd() T <span class="cov8" title="1">{
+        if b.Len() == 0 </span><span class="cov8" title="1">{
+                panic("PeekEnd called on empty buffer")</span>
+        }
+        <span class="cov8" title="1">buf, _, i1 := b.get()
+        return buf[b.mod(i1-1)]</span>
+}
+
+// Len returns the number of elements in the buffer.
+func (b *Buffer[T]) Len() int <span class="cov8" title="1">{
+        return b.len
+}</span>
+
+// Cap returns the capacity of the underlying buffer.
+func (b *Buffer[T]) Cap() int <span class="cov8" title="1">{
+        return cap(b.buf)
+}</span>
+
+// SetCap sets the capacity of the underlying slice
+// to at least max(n, b.Len()). This can be used
+// to shrink the capacity an over-large buffer.
+//
+// Note: the resulting capacity can still be as much
+// as b.Len() * 2.
+func (b *Buffer[T]) SetCap(n int) <span class="cov0" title="0">{
+        b.resize(n)
+}</span>
+
+// Get returns the i'th element in the buffer; the start element
+// is at index zero; the end is at b.Len() - 1.
+// It panics if i is out of range.
+func (b *Buffer[T]) Get(i int) T <span class="cov8" title="1">{
+        if i &lt; 0 || i &gt;= b.Len() </span><span class="cov8" title="1">{
+                panic("ring.Buffer.Get called with index out of range")</span>
+        }
+        <span class="cov8" title="1">buf, i0, _ := b.get()
+        return buf[b.mod(i0+i)]</span>
+}
+
+// PopStart removes and returns the element from the start of the buffer. If the
+// buffer is empty, the call will panic.
+func (b *Buffer[T]) PopStart() T <span class="cov8" title="1">{
+        if b.Len() &lt;= 0 </span><span class="cov8" title="1">{
+                panic("ring.Buffer.PopStart called on empty buffer")</span>
+        }
+        <span class="cov8" title="1">buf, i0, _ := b.get()
+        x := buf[i0]
+        buf[i0] = *new(T)
+        i0 = b.mod(i0 + 1)
+        b.buf = b.buf[:i0]
+        b.len--
+        return x</span>
+}
+
+// PopStart removes and returns the element from the end of the buffer. If the
+// buffer is empty, the call will panic.
+func (b *Buffer[T]) PopEnd() T <span class="cov8" title="1">{
+        if b.Len() &lt;= 0 </span><span class="cov8" title="1">{
+                panic("ring.Buffer.PopEnd called on empty buffer")</span>
+        }
+        <span class="cov8" title="1">buf, _, i1 := b.get()
+        i1 = b.mod(i1 - 1)
+        x := buf[i1]
+        buf[i1] = *new(T)
+        b.len--
+        return x</span>
+}
+
+// resizes the buffer if needed to ensure that the capacity is at least n.
+func (b *Buffer[T]) ensureCap(n int) <span class="cov8" title="1">{
+        if n &lt;= cap(b.buf) </span><span class="cov8" title="1">{
+                return
+        }</span>
+        <span class="cov8" title="1">b.resize(n)</span>
+}
+
+func (b *Buffer[T]) resize(minCap int) <span class="cov8" title="1">{
+        newCap := 1 &lt;&lt; bits.Len(uint(minCap-1))
+        if newCap == b.Cap() </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov8" title="1">buf, i0, i1 := b.get()
+        buf1 := make([]T, newCap)
+        if i0 &lt; i1 </span><span class="cov8" title="1">{
+                copy(buf1, buf[i0:i1])
+        }</span> else<span class="cov8" title="1"> {
+                n := copy(buf1, buf[i0:])
+                copy(buf1[n:], buf[:i1])
+        }</span>
+        <span class="cov8" title="1">b.buf = buf1[:0]</span>
+}
+
+// get returns the full buffer and the indexes into that
+// of the start and just after the end elements respectively.
+// When i1&lt;i0, the elements are stored at
+// buf[i0:], buf[:i1]
+func (b *Buffer[T]) get() ([]T, int, int) <span class="cov8" title="1">{
+        return b.buf[:cap(b.buf)], len(b.buf), b.mod(len(b.buf) + b.len)
+}</span>
+
+func (b *Buffer[T]) slices() ([]T, []T) <span class="cov8" title="1">{
+        data, i0, i1 := b.get()
+        if i1 &gt;= i0 </span><span class="cov8" title="1">{
+                return data[i0:i1:i1], nil
+        }</span>
+        <span class="cov0" title="0">return data[i0:], data[:i1]</span>
+}
+
+// mod returns x modulo the buffer capacity.
+// It relies on the fact that the buffer capacity is
+// always a power of 2.
+func (b *Buffer[T]) mod(x int) int <span class="cov8" title="1">{
+        return x &amp; (cap(b.buf) - 1)
+}</span>
+
+func (b *Buffer[T]) String() string <span class="cov8" title="1">{
+        buf, i0, i1 := b.get()
+        return fmt.Sprintf("{%#v, i0=%d, i1=%d}", buf, i0, i1)
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
